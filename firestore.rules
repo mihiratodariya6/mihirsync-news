@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'mihiratodariya6@gmail.com'
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity Validations
+    function validateArticle(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.slug is string && data.slug.matches('^[a-z0-9-]+$')
+        && data.excerpt is string && data.excerpt.size() <= 500
+        && data.content is string
+        && data.author is string
+        && data.category is string
+        && data.image is string
+        && (data.tags is list || !('tags' in data))
+        && data.isTrending is bool
+        && data.isBreaking is bool
+        && data.views is number
+        && data.readTime is string;
+    }
+
+    function validateUser(data) {
+      return data.uid == request.auth.uid
+        && data.email == request.auth.token.email
+        && data.displayName is string
+        && (data.photoURL is string || !('photoURL' in data))
+        && data.role in ['user', 'admin']
+        && data.bookmarks is list;
+    }
+
+    function validateComment(data) {
+      return data.userId == request.auth.uid
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 1000
+        && data.createdAt == request.time;
+    }
+
+    // Routes
+    
+    // Articles Collection
+    match /articles/{articleId} {
+      allow get: if true;
+      allow list: if true;
+      
+      allow create: if isAdmin() 
+        && isValidId(articleId) 
+        && validateArticle(incoming())
+        && incoming().publishedAt == request.time
+        && incoming().keys().hasAll(['title', 'slug', 'content', 'author', 'category', 'publishedAt', 'isTrending', 'isBreaking', 'views', 'readTime'])
+        && incoming().keys().size() <= 15; // approximate total keys
+
+      allow update: if (isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['views'])))
+        && validateArticle(incoming())
+        && (isAdmin() || incoming().views == (existing().get('views', 0) + 1));
+        
+      allow delete: if isAdmin();
+
+      // Sub-collection: Comments
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isEmailVerified() 
+          && isValidId(commentId)
+          && validateComment(incoming())
+          && exists(/databases/$(database)/documents/articles/$(articleId));
+        
+        allow delete: if isAdmin() || isOwner(existing().userId);
+      }
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if isOwner(userId) 
+        && validateUser(incoming())
+        && incoming().role == 'user'; // Prevent self-promoting to admin
+        
+      allow update: if isOwner(userId)
+        && validateUser(incoming())
+        && incoming().role == existing().role // Prevent changing role
+        && incoming().diff(existing()).affectedKeys().hasOnly(['bookmarks', 'displayName', 'photoURL']);
+        
+      allow delete: if isAdmin();
+    }
+
+    // Admin Collection (System managed)
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Only manageable via Firebase Console or Admin SDK
+    }
+  }
+}
