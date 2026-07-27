@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://YOUR-DOMAIN.vercel.app";
+  const baseUrl = "https://mihirsync-news-9nvx.vercel.app";
 
   return [
     {
@@ -21,6 +21,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
-    }
+    },
   ];
 }
