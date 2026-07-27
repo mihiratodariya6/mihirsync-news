@@ -1,79 +1,91 @@
 'use client';
 
 import React, { useState } from 'react';
-import { auth } from '../../../lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Lock, Mail, ShieldAlert } from 'lucide-react';
+import { auth } from '../../../../lib/firebase';
+// 🚀 અહીં setPersistence અને browserSessionPersistence એડ કર્યા છે
+import { signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { useRouter, useParams } from 'next/navigation';
+import { Lock, Mail, AlertCircle } from 'lucide-react';
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const params = useParams();
+  const lang = (params.lang as string) || 'en';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setLoading(true);
 
     try {
+      // 🚀 ૧. Firebase ને કહો કે માત્ર ટેબ ચાલુ રહે ત્યાં સુધી જ પાસવર્ડ યાદ રાખે
+      await setPersistence(auth, browserSessionPersistence);
+      
+      // 🚀 ૨. હવે લોગ-ઈન ચેક કરો
       await signInWithEmailAndPassword(auth, email, password);
-      // AuthGuard ઓટોમેટિક ડેશબોર્ડ પર લઈ જશે, એટલે અહીં કઈ કરવાની જરૂર નથી
+      
+      router.push(`/${lang}/admin`);
     } catch (err: any) {
-      setError('ઈમેલ અથવા પાસવર્ડ ખોટો છે! / Access Denied');
+      console.error(err);
+      setError('Invalid email or password. Access Denied!');
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      
-      {/* Background Effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"></div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 relative overflow-hidden">
+      {/* Background Design */}
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#3b82f6 1px, transparent 1px)", backgroundSize: "30px 30px" }}></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full"></div>
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 relative z-10">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center font-black text-white text-3xl mx-auto mb-4 shadow-lg shadow-blue-500/20">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center font-black text-white text-3xl mx-auto shadow-lg shadow-blue-500/20 mb-4">
             M
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Mihir<span className="text-blue-500">Sync</span> CMS</h1>
-          <p className="text-slate-400 text-sm mt-2 font-medium">Enterprise Access Only</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">MihirSync Admin</h1>
+          <p className="text-slate-400 text-sm font-medium mt-1">Authorized Personnel Only</p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm font-bold flex items-center gap-2 mb-6">
-            <ShieldAlert size={18} /> {error}
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 mb-6">
+            <AlertCircle size={18} />
+            {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+            <label className="block text-sm font-bold text-slate-400 mb-2">Admin Email</label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
               <input 
                 type="email" 
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-white px-12 py-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full bg-slate-950 border border-slate-800 text-white px-11 py-3.5 rounded-xl outline-none focus:border-blue-500 transition-colors font-medium"
                 placeholder="admin@mihirsync.com"
+                required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-sm font-bold text-slate-400 mb-2">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
               <input 
                 type="password" 
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-white px-12 py-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full bg-slate-950 border border-slate-800 text-white px-11 py-3.5 rounded-xl outline-none focus:border-blue-500 transition-colors font-medium"
                 placeholder="••••••••"
+                required
               />
             </div>
           </div>
@@ -81,14 +93,12 @@ export default function AdminLogin() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-70 mt-4"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all shadow-lg hover:shadow-blue-600/25 disabled:opacity-50 mt-4"
           >
             {loading ? 'Authenticating...' : 'Secure Login'}
           </button>
         </form>
       </div>
-      
-      <p className="text-slate-500 text-xs mt-8 relative z-10">Protected by Firebase Enterprise Security</p>
     </div>
   );
 }
