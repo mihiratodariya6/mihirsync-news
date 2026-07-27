@@ -1,3 +1,4 @@
+import Script from 'next/script'; // 👈 ૧. આ લાઈન સૌથી ઉપર નાખજે
 import { Noto_Sans, Noto_Sans_Gujarati, Noto_Sans_Devanagari } from "next/font/google";
 import "../globals.css";
 import { Globe } from 'lucide-react';
@@ -31,6 +32,15 @@ export default async function RootLayout({
 
   return (
     <html lang={lang}>
+      <head>
+        {/* 🚀 ગૂગલ એડસેન્સ (Google AdSense) નો કોડ અહી એડ કર્યો છે */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-તારો_એડસેન્સ_કોડ_અહીંયા_નાખજે"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
         {/* Top Bar - Language Switcher */}
