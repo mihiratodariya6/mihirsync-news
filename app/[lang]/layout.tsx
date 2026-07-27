@@ -12,11 +12,12 @@ const fontEn = Noto_Sans({ subsets: ["latin"], weight: ['400', '500', '600', '70
 const fontGu = Noto_Sans_Gujarati({ subsets: ["gujarati"], weight: ['400', '500', '600', '700', '800'] });
 const fontHi = Noto_Sans_Devanagari({ subsets: ["devanagari"], weight: ['400', '500', '600', '700', '800'] });
 
+// 🚀 અહી મેં તારો સાચો કોડ સેટ કરી દીધો છે! (Next.js ની સાચી રીત)
 export const metadata = {
   title: "MihirSync | Enterprise News Portal",
   description: "World-class news portal providing fast and reliable updates.",
   verification: {
-    google: "<meta name="google-site-verification" content="pjKA46T4ncyqwpbR0O5NiDIQzxRj3ui0BP3sSBmFjbY" />", // 👈 (દા.ત. જો ગૂગલનો કોડ <meta name="..." content="abc123xyz" /> હોય, તો તારે ખાલી abc123xyz જ અહી નાખવાનું છે)
+    google: "pjKA46T4ncyqwpb122O5NiDIQzxRj3ui0BP3sSBmFjbY",
   },
 };
 
@@ -36,7 +37,6 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <head>
-        
         {/* 🚀 ગૂગલ એડસેન્સ (Google AdSense) નો કોડ અહી એડ કર્યો છે */}
         <Script
           async
@@ -44,10 +44,7 @@ export default async function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-
-        {/* 🚀 ગૂગલ સર્ચ કન્સોલનો સાબિતી વાળો (Verification) કોડ અહી નાખ્યો છે */}
-        <meta name="google-site-verification" content="<meta name="google-site-verification" content="pjKA46T4ncyqwpbR0O5NiDIQzxRj3ui0BP3sSBmFjbY" />" />
-
+        {/* નોંધ: પેલો <meta> ટેગ અહીંથી કાઢી નાખ્યો છે, કારણ કે એ ઉપર metadata માં સેટ થઈ ગયો છે. */}
       </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
@@ -72,7 +69,7 @@ export default async function RootLayout({
           {children}
         </main>
 
-        {/* 🚀 PREMIUM FOOTER (આપણે બનાવેલી નવી Footer.tsx ફાઈલ અહીં આવી ગઈ) */}
+        {/* 🚀 PREMIUM FOOTER */}
         <Footer lang={lang} />
 
       </body>
