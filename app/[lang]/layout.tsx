@@ -33,6 +33,7 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <head>
+        
         {/* 🚀 ગૂગલ એડસેન્સ (Google AdSense) નો કોડ અહી એડ કર્યો છે */}
         <Script
           async
@@ -40,6 +41,10 @@ export default async function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+
+        {/* 🚀 ગૂગલ સર્ચ કન્સોલનો સાબિતી વાળો (Verification) કોડ અહી નાખ્યો છે */}
+        <meta name="google-site-verification" content="<meta name="google-site-verification" content="pjKA46T4ncyqwpbR0O5NiDIQzxRj3ui0BP3sSBmFjbY" />" />
+
       </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
