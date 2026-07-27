@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { auth } from '../../../../lib/firebase';
+import { auth } from '../../../lib/firebase';
 // 🚀 અહીં setPersistence અને browserSessionPersistence એડ કર્યા છે
 import { signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { useRouter, useParams } from 'next/navigation';

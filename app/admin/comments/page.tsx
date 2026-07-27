@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { db } from '../../../../lib/firebase';
+import { db } from '../../../lib/firebase';
 import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { MessageSquare, Trash2, CheckCircle, XCircle, Search, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
