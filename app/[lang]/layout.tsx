@@ -15,6 +15,9 @@ const fontHi = Noto_Sans_Devanagari({ subsets: ["devanagari"], weight: ['400', '
 export const metadata = {
   title: "MihirSync | Enterprise News Portal",
   description: "World-class news portal providing fast and reliable updates.",
+  verification: {
+    google: "<meta name="google-site-verification" content="pjKA46T4ncyqwpbR0O5NiDIQzxRj3ui0BP3sSBmFjbY" />", // 👈 (દા.ત. જો ગૂગલનો કોડ <meta name="..." content="abc123xyz" /> હોય, તો તારે ખાલી abc123xyz જ અહી નાખવાનું છે)
+  },
 };
 
 export default async function RootLayout({
