@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 // 🚀 અહી BellRing આઈકન એડ કર્યું
-import { LayoutDashboard, FileEdit, FileText, Layers, Image as ImageIcon, MessageSquare, Users, Settings, LogOut, BellRing } from 'lucide-react';
+import { LayoutDashboard, FileEdit, FileText, Layers, Image as ImageIcon, MessageSquare, Users, Settings, LogOut, BellRing, Video } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -14,12 +14,13 @@ export default function Sidebar() {
   // સાઇડબારના મેનુ
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { name: 'AI Editor', icon: FileEdit, path: '/admin' }, // અત્યારે આપણું એડિટર અહી છે
+    { name: 'AI Editor', icon: FileEdit, path: '/admin/' }, // અત્યારે આપણું એડિટર અહીં છે
     { name: 'All Posts', icon: FileText, path: '/admin/posts' },
+    { name: 'Trending Reels', icon: Video, path: '/admin/reels' }, // 🚀 આપણું નવું Reels બટન
     { name: 'Categories', icon: Layers, path: '/admin/categories' },
     { name: 'Media Library', icon: ImageIcon, path: '/admin/media' },
     { name: 'Comments', icon: MessageSquare, path: '/admin/comments' },
-    { name: 'Notifications', icon: BellRing, path: '/admin/notifications' }, // 🚀 અહી આપણું નવું પેજ એડ કર્યું
+    { name: 'Notifications', icon: BellRing, path: '/admin/notifications' }, // 🚀 અહીં આપણું નવું પેજ એડ કર્યું
     { name: 'Users & Roles', icon: Users, path: '/admin/users' },
     { name: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
