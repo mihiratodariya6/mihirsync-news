@@ -10,18 +10,10 @@ import Image from 'next/image';
 import ArticleInteractions from '../../../../components/web/ArticleInteractions';
 import CommentsSection from '../../../../components/web/CommentsSection';
 
-export default function SinglePostPage() {
-  const params = useParams();
-  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'en';
-  const postId = params.id as string;
-
-  const [post, setPost] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [localViews, setLocalViews] = useState(0);
+// 🚀 નવો કમાલ: પ્રોગ્રેસ બારને આખા પેજથી અલગ કરી દીધી! (જેથી ટ્રાન્સલેટ રીફ્રેશ ના થાય)
+const ScrollProgressBar = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [readingTime, setReadingTime] = useState(1);
-
-  // 🚀 Scroll Progress Bar Logic
+  
   useEffect(() => {
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollTop;
@@ -32,6 +24,21 @@ export default function SinglePostPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  return (
+    <div className="fixed top-0 left-0 h-1.5 bg-blue-600 z-[100] transition-all duration-150 ease-out" style={{ width: `${scrollProgress}%` }}></div>
+  );
+};
+
+export default function SinglePostPage() {
+  const params = useParams();
+  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'en';
+  const postId = params.id as string;
+
+  const [post, setPost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [localViews, setLocalViews] = useState(0);
+  const [readingTime, setReadingTime] = useState(1);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -107,8 +114,8 @@ export default function SinglePostPage() {
   return (
     <div className="bg-white min-h-screen pb-20 font-sans selection:bg-blue-200 selection:text-blue-900">
       
-      {/* 🚀 Reading Progress Bar */}
-      <div className="fixed top-0 left-0 h-1.5 bg-blue-600 z-[100] transition-all duration-150 ease-out" style={{ width: `${scrollProgress}%` }}></div>
+      {/* 🚀 અલગ કરેલી પ્રોગ્રેસ બાર અહીં મૂકી છે */}
+      <ScrollProgressBar />
       
       {/* 🚀 HEADER SECTION */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 pb-8">
@@ -198,34 +205,21 @@ export default function SinglePostPage() {
             />
           </div>
 
-          {/* 🚀 Custom Prose Styles (BBC/Verge Level Typography) */}
+          {/* 🚀 Custom Prose Styles */}
           <style dangerouslySetInnerHTML={{__html: `
             .premium-content { font-size: 21px; line-height: 1.8; color: #334155; font-family: system-ui, -apple-system, sans-serif; }
-            
-            /* Drop Cap Effect on First Paragraph */
-            .premium-content p:first-of-type::first-letter {
-              float: left; font-size: 4.5rem; line-height: 0.8; font-weight: 900;
-              margin-right: 0.15em; color: #2563eb; font-family: Georgia, serif;
-            }
-            
+            .premium-content p:first-of-type::first-letter { float: left; font-size: 4.5rem; line-height: 0.8; font-weight: 900; margin-right: 0.15em; color: #2563eb; font-family: Georgia, serif; }
             .premium-content p { margin-bottom: 1.8em; }
             .premium-content h2 { font-size: 1.75em; font-weight: 900; color: #0f172a; margin-top: 2em; margin-bottom: 0.8em; letter-spacing: -0.02em; }
             .premium-content h3 { font-size: 1.35em; font-weight: 800; color: #1e293b; margin-top: 1.5em; margin-bottom: 0.6em; }
             .premium-content a { color: #2563eb; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; font-weight: 600; transition: all 0.2s; }
             .premium-content a:hover { color: #1d4ed8; background: #eff6ff; }
-            
-            /* Premium Blockquote */
-            .premium-content blockquote {
-              border-left: 4px solid #2563eb; background: #f8fafc;
-              padding: 1.5rem 2rem; margin: 2.5rem 0; font-size: 1.2em; font-style: italic; color: #0f172a; border-radius: 0 16px 16px 0;
-            }
+            .premium-content blockquote { border-left: 4px solid #2563eb; background: #f8fafc; padding: 1.5rem 2rem; margin: 2.5rem 0; font-size: 1.2em; font-style: italic; color: #0f172a; border-radius: 0 16px 16px 0; }
             .premium-content blockquote p { margin: 0; }
             .premium-content blockquote p::first-letter { font-size: inherit; float: none; color: inherit; font-weight: inherit; }
-            
             .premium-content ul { list-style-type: none; padding-left: 0; margin-bottom: 2em; }
             .premium-content ul li { position: relative; padding-left: 1.8em; margin-bottom: 0.8em; }
             .premium-content ul li::before { content: '•'; position: absolute; left: 0; color: #2563eb; font-weight: bold; font-size: 1.5em; top: -0.2em; }
-            
             .premium-content img { border-radius: 16px; margin: 2.5rem 0; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1); width: 100%; height: auto; }
             .premium-content strong { font-weight: 700; color: #0f172a; }
           `}} />
@@ -274,7 +268,7 @@ export default function SinglePostPage() {
           {/* Sticky Container for Sidebar */}
           <div className="sticky top-28 space-y-8">
             
-            {/* 🚀 TARI LINK VALU FOLLOW BOX (Only FB, Insta, WA) */}
+            {/* 🚀 TARI LINK VALU FOLLOW BOX */}
             <div className="bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-800 text-white">
               <h3 className="text-lg font-black mb-1">Stay Updated!</h3>
               <p className="text-slate-400 text-sm mb-6 font-medium">Get breaking news directly on your favorite apps.</p>
