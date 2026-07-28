@@ -8,7 +8,7 @@ import { Mail, MapPin, Send, ArrowRight, Smartphone, Apple } from 'lucide-react'
 
 export default function Footer({ lang = 'en' }: { lang?: string }) {
   const [categories, setCategories] = useState<any[]>([]);
-
+<footer className="notranslate bg-slate-900 text-white py-8"></footer>
   useEffect(() => {
     const fetchCategories = async () => {
       try {
