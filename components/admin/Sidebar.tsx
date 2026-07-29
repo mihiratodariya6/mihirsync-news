@@ -17,6 +17,7 @@ export default function Sidebar() {
     { name: 'AI Editor', icon: FileEdit, path: '/admin/' }, // અત્યારે આપણું એડિટર અહીં છે
     { name: 'All Posts', icon: FileText, path: '/admin/posts' },
     { name: 'Trending Reels', icon: Video, path: '/admin/reels' }, // 🚀 આપણું નવું Reels બટન
+    { name: 'Shorts News', icon: ImageIcon, path: '/admin/shorts' },  
     { name: 'Categories', icon: Layers, path: '/admin/categories' },
     { name: 'Media Library', icon: ImageIcon, path: '/admin/media' },
     { name: 'Comments', icon: MessageSquare, path: '/admin/comments' },
