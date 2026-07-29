@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
-// અહી Firebase storage કાઢી નાખ્યું છે 🚀
 import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Upload } from 'lucide-react';
 
 export default function ShortsAdminPage() {
@@ -16,11 +15,9 @@ export default function ShortsAdminPage() {
   const [preview, setPreview] = useState('');
   const [success, setSuccess] = useState('');
 
-  // 📸 1. ImgBB (Free) માં ઈમેજ અપલોડ કરવાનું ફંક્શન
   const uploadImage = async (imageFile: File) => {
-    // 👇 અહી તારી ImgBB ની API Key નાખજે (સિંગલ કોટ ' ' ની અંદર જ)
+    // 👇 અહી તારી ImgBB ની API Key નાખજે
     const apiKey = '775db2a97e75d93de3b89abce9557a51'; 
-    
     const formData = new FormData();
     formData.append('image', imageFile);
 
@@ -31,7 +28,7 @@ export default function ShortsAdminPage() {
 
     const data = await res.json();
     if (data.success) {
-      return data.data.url; // ImgBB આપણને સીધી ડાયરેક્ટ ઈમેજ લિંક આપી દેશે
+      return data.data.url;
     } else {
       throw new Error("ImgBB upload failed");
     }
@@ -40,7 +37,7 @@ export default function ShortsAdminPage() {
   const fetchShorts = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, 'shorts'), orderBy('createdAt', 'desc'), limit(15));
+      const q = query(collection(db, 'shorts'), orderBy('createdAt', 'desc'), limit(10));
       const querySnapshot = await getDocs(q);
       const shortsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setShorts(shortsData);
@@ -64,19 +61,26 @@ export default function ShortsAdminPage() {
 
   const handleAddShort = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      alert("Please select an image first!");
-      return;
-    }
+    if (!file) return;
     
     setAdding(true);
     setSuccess('');
 
     try {
-      // 🚀 પહેલા ઈમેજ ImgBB માં જશે
+      // 🚀 ઓટો-ડિલીટ લોજીક: ચેક કરો કે 10 કે તેથી વધુ શોર્ટ્સ છે?
+      const checkQuery = query(collection(db, 'shorts'), orderBy('createdAt', 'asc')); // જૂના સૌથી પહેલા આવશે
+      const snapCheck = await getDocs(checkQuery);
+      
+      if (snapCheck.docs.length >= 10) {
+        // જો 10 થી વધુ હોય, તો જૂના ડિલીટ કરો જેથી નવી 1 માટે જગ્યા થાય
+        const deleteCount = snapCheck.docs.length - 9; 
+        for (let i = 0; i < deleteCount; i++) {
+          await deleteDoc(doc(db, 'shorts', snapCheck.docs[i].id));
+        }
+      }
+
       const uploadedUrl = await uploadImage(file);
 
-      // 🚀 પછી એની લિંક તારા Firebase ડેટાબેઝમાં સેવ થશે
       await addDoc(collection(db, 'shorts'), {
         title: title || 'Short News',
         imageUrl: uploadedUrl,
@@ -92,7 +96,7 @@ export default function ShortsAdminPage() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error("Error adding short: ", error);
-      alert('Error adding short. Please check ImgBB API Key.');
+      alert('Error adding short. Please try again.');
     } finally {
       setAdding(false);
     }
@@ -119,18 +123,18 @@ export default function ShortsAdminPage() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto">
-      
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
             <ImageIcon size={32} className="text-orange-500" /> Manage Shorts News
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Upload infographic images for quick news (Max 10 shown on home).</p>
+          <p className="text-slate-500 font-medium mt-1">Upload infographic images for quick news (Auto-deletes oldest when exceeding 10).</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
+        {/* ADD SHORT FORM */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-8">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -187,11 +191,12 @@ export default function ShortsAdminPage() {
           </div>
         </div>
 
+        {/* LIST OF SHORTS */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <ImageIcon size={20} className="text-slate-500"/> Uploaded Shorts ({shorts.length})
+                <ImageIcon size={20} className="text-slate-500"/> Uploaded Shorts ({shorts.length}/10)
               </h2>
               <button onClick={fetchShorts} className="text-slate-400 hover:text-orange-500 p-2"><RefreshCw size={18}/></button>
             </div>
@@ -212,17 +217,11 @@ export default function ShortsAdminPage() {
                 {shorts.map((short) => (
                   <div key={short.id} className="relative group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 aspect-[3/4]">
                     <img src={short.imageUrl} alt={short.title} className="w-full h-full object-cover" />
-                    
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded-md">
                       {formatTime(short.createdAt)}
                     </div>
-
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
-                      <button 
-                        onClick={() => handleDelete(short.id)}
-                        className="self-end bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg"
-                        title="Delete Short"
-                      >
+                      <button onClick={() => handleDelete(short.id)} className="self-end bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg">
                         <Trash2 size={16} />
                       </button>
                       <span className="text-white font-bold text-xs truncate">{short.title}</span>
@@ -233,7 +232,6 @@ export default function ShortsAdminPage() {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

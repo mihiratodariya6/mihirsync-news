@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
-// 👈 પાથ સુધાર્યો છે જેથી એરર ના આવે
 import TrendingReels from '../../components/web/TrendingReels'; 
+import ShortsNews from '../../components/web/ShortsNews'; // 👈 તારું ઇમ્પોર્ટ અહીં આવી ગયું છે
 
 export default function HomePage() {
   const params = useParams();
@@ -130,6 +130,11 @@ export default function HomePage() {
       {/* 🎬 TRENDING REELS SECTION */}
       <div className="border-t border-slate-200 pt-10">
          <TrendingReels />
+      </div>
+
+      {/* 📸 SHORTS NEWS SECTION (આપણે અહીં ઉમેર્યું 🚀) */}
+      <div className="mb-10">
+         <ShortsNews />
       </div>
 
     </div>
