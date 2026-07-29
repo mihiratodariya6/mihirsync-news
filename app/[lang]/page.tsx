@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
-import TrendingReels from '../components/web/TrendingReels'; // 👈 તારું ઇમ્પોર્ટ અહીં છે
+// 👈 પાથ સુધાર્યો છે જેથી એરર ના આવે
+import TrendingReels from '../../components/web/TrendingReels'; 
 
 export default function HomePage() {
   const params = useParams();
@@ -21,13 +22,16 @@ export default function HomePage() {
       try {
         const q = query(collection(db, 'articles'), where('status', '==', 'published'));
         const snap = await getDocs(q);
-        const allNews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // 🚀 અહી "as any" ઉમેર્યું જેથી TypeScript ની બધી લાલ લાઈનો ગાયબ થઈ જશે!
+        const allNews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
         allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
 
-        setFeaturedNews(allNews.filter(n => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter(n => n.placement?.isTrending).slice(0, 5));
-        setHomeNews(allNews.filter(n => n.placement?.showOnHome));
+        // અહી (n: any) કર્યું છે 
+        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
+        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5));
+        setHomeNews(allNews.filter((n: any) => n.placement?.showOnHome));
       } catch (error) {
         console.error("Error loading news:", error);
       } finally {
@@ -97,7 +101,7 @@ export default function HomePage() {
       </div>
 
       {/* 📰 BOTTOM SECTION: Latest Stories */}
-      <div className="mb-16"> {/* અહી નીચે જગ્યા છોડવા mb-16 ઉમેર્યું */}
+      <div className="mb-16">
         <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
           <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">Latest Stories</h2>
         </div>
@@ -123,7 +127,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🎬 TRENDING REELS SECTION: આ આપણે નવું ઉમેર્યું છે 🚀 */}
+      {/* 🎬 TRENDING REELS SECTION */}
       <div className="border-t border-slate-200 pt-10">
          <TrendingReels />
       </div>
