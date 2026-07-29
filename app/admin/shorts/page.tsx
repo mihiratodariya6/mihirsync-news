@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
-// અહી Cloudinary ની જરૂર પડશે ઈમેજ સેવ કરવા (જેમ AI Editor માં થાય છે)
+// અહી Firebase storage કાઢી નાખ્યું છે 🚀
 import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Upload } from 'lucide-react';
 
 export default function ShortsAdminPage() {
@@ -16,19 +16,25 @@ export default function ShortsAdminPage() {
   const [preview, setPreview] = useState('');
   const [success, setSuccess] = useState('');
 
-  // 1. ઈમેજ અપલોડ કરવાનું ફંક્શન (Cloudinary માં)
+  // 📸 1. ImgBB (Free) માં ઈમેજ અપલોડ કરવાનું ફંક્શન
   const uploadImage = async (imageFile: File) => {
-    const formData = new FormData();
-    formData.append('file', imageFile);
-    formData.append('upload_preset', 'news_uploads'); // તારું Cloudinary Preset
+    // 👇 અહી તારી ImgBB ની API Key નાખજે (સિંગલ કોટ ' ' ની અંદર જ)
+    const apiKey = '775db2a97e75d93de3b89abce9557a51'; 
     
-    // જો તારું ક્લાઉડ નામ અલગ હોય તો બદલી નાખજે (મોટેભાગે આ જ હશે)
-    const res = await fetch(`https://api.cloudinary.com/v1_1/dxu7nnstx/image/upload`, {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: 'POST',
       body: formData
     });
+
     const data = await res.json();
-    return data.secure_url;
+    if (data.success) {
+      return data.data.url; // ImgBB આપણને સીધી ડાયરેક્ટ ઈમેજ લિંક આપી દેશે
+    } else {
+      throw new Error("ImgBB upload failed");
+    }
   };
 
   const fetchShorts = async () => {
@@ -49,7 +55,6 @@ export default function ShortsAdminPage() {
     fetchShorts();
   }, []);
 
-  // 2. ફાઈલ સિલેક્ટ થાય ત્યારે પ્રિવ્યૂ બતાવવા
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -68,10 +73,10 @@ export default function ShortsAdminPage() {
     setSuccess('');
 
     try {
-      // પેલા Cloudinary માં ઈમેજ અપલોડ કરો અને લિંક મેળવો
+      // 🚀 પહેલા ઈમેજ ImgBB માં જશે
       const uploadedUrl = await uploadImage(file);
 
-      // પછી Firebase માં સેવ કરો
+      // 🚀 પછી એની લિંક તારા Firebase ડેટાબેઝમાં સેવ થશે
       await addDoc(collection(db, 'shorts'), {
         title: title || 'Short News',
         imageUrl: uploadedUrl,
@@ -87,7 +92,7 @@ export default function ShortsAdminPage() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error("Error adding short: ", error);
-      alert('Error adding short. Image upload failed.');
+      alert('Error adding short. Please check ImgBB API Key.');
     } finally {
       setAdding(false);
     }
@@ -103,7 +108,6 @@ export default function ShortsAdminPage() {
     }
   };
 
-  // તારીખ અને સમય ફોર્મેટ કરવા માટે
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Just now';
     const date = timestamp.toDate();
@@ -127,7 +131,6 @@ export default function ShortsAdminPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ADD SHORT FORM */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-8">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -152,7 +155,6 @@ export default function ShortsAdminPage() {
                 />
               </div>
 
-              {/* 📸 GALLERY UPLOAD BUTTON */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Select Image (Gallery/PC)</label>
                 <input 
@@ -185,7 +187,6 @@ export default function ShortsAdminPage() {
           </div>
         </div>
 
-        {/* LIST OF SHORTS */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
@@ -212,7 +213,6 @@ export default function ShortsAdminPage() {
                   <div key={short.id} className="relative group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 aspect-[3/4]">
                     <img src={short.imageUrl} alt={short.title} className="w-full h-full object-cover" />
                     
-                    {/* 🕒 Time Badge */}
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded-md">
                       {formatTime(short.createdAt)}
                     </div>
