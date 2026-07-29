@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
-import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Upload } from 'lucide-react';
+import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Upload, Globe } from 'lucide-react';
 
 export default function ShortsAdminPage() {
   const [shorts, setShorts] = useState<any[]>([]);
@@ -13,6 +13,7 @@ export default function ShortsAdminPage() {
   const [title, setTitle] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
+  const [language, setLanguage] = useState('gu'); // 👈 ભાષા માટે નવું સ્ટેટ
   const [success, setSuccess] = useState('');
 
   const uploadImage = async (imageFile: File) => {
@@ -37,7 +38,8 @@ export default function ShortsAdminPage() {
   const fetchShorts = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, 'shorts'), orderBy('createdAt', 'desc'), limit(10));
+      // 🚀 લિમિટ 30 કરી છે જેથી 3 ભાષાના 10-10 શોર્ટ્સ દેખાય
+      const q = query(collection(db, 'shorts'), orderBy('createdAt', 'desc'), limit(30));
       const querySnapshot = await getDocs(q);
       const shortsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setShorts(shortsData);
@@ -67,13 +69,12 @@ export default function ShortsAdminPage() {
     setSuccess('');
 
     try {
-      // 🚀 ઓટો-ડિલીટ લોજીક: ચેક કરો કે 10 કે તેથી વધુ શોર્ટ્સ છે?
-      const checkQuery = query(collection(db, 'shorts'), orderBy('createdAt', 'asc')); // જૂના સૌથી પહેલા આવશે
+      const checkQuery = query(collection(db, 'shorts'), orderBy('createdAt', 'asc'));
       const snapCheck = await getDocs(checkQuery);
       
-      if (snapCheck.docs.length >= 10) {
-        // જો 10 થી વધુ હોય, તો જૂના ડિલીટ કરો જેથી નવી 1 માટે જગ્યા થાય
-        const deleteCount = snapCheck.docs.length - 9; 
+      // 🚀 લિમિટ 30 કરી છે જેથી વધારે ફોટા રહી શકે
+      if (snapCheck.docs.length >= 30) {
+        const deleteCount = snapCheck.docs.length - 29; 
         for (let i = 0; i < deleteCount; i++) {
           await deleteDoc(doc(db, 'shorts', snapCheck.docs[i].id));
         }
@@ -84,6 +85,7 @@ export default function ShortsAdminPage() {
       await addDoc(collection(db, 'shorts'), {
         title: title || 'Short News',
         imageUrl: uploadedUrl,
+        language: language, // 👈 ડેટાબેઝમાં ભાષા સેવ થશે
         createdAt: serverTimestamp(),
       });
 
@@ -112,15 +114,6 @@ export default function ShortsAdminPage() {
     }
   };
 
-  const formatTime = (timestamp: any) => {
-    if (!timestamp) return 'Just now';
-    const date = timestamp.toDate();
-    return new Intl.DateTimeFormat('en-IN', { 
-      day: '2-digit', month: 'short', 
-      hour: '2-digit', minute: '2-digit', hour12: true 
-    }).format(date);
-  };
-
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
@@ -128,13 +121,12 @@ export default function ShortsAdminPage() {
           <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
             <ImageIcon size={32} className="text-orange-500" /> Manage Shorts News
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Upload infographic images for quick news (Auto-deletes oldest when exceeding 10).</p>
+          <p className="text-slate-500 font-medium mt-1">Upload shorts for different languages (Auto-deletes oldest when exceeding 30).</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ADD SHORT FORM */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-8">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -148,6 +140,24 @@ export default function ShortsAdminPage() {
             )}
 
             <form onSubmit={handleAddShort} className="space-y-5">
+              
+              {/* 🌐 ભાષા પસંદ કરવાનું ડ્રોપડાઉન */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <Globe size={16} className="text-blue-500"/> Select Language
+                </label>
+                <select 
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition font-bold text-slate-700 cursor-pointer"
+                >
+                  <option value="all">🌐 All Languages (બધામાં દેખાશે)</option>
+                  <option value="en">🇬🇧 English</option>
+                  <option value="gu">🇮🇳 Gujarati</option>
+                  <option value="hi">🇮🇳 Hindi</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Short Title (Optional)</label>
                 <input 
@@ -191,12 +201,11 @@ export default function ShortsAdminPage() {
           </div>
         </div>
 
-        {/* LIST OF SHORTS */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <ImageIcon size={20} className="text-slate-500"/> Uploaded Shorts ({shorts.length}/10)
+                <ImageIcon size={20} className="text-slate-500"/> Uploaded Shorts ({shorts.length}/30)
               </h2>
               <button onClick={fetchShorts} className="text-slate-400 hover:text-orange-500 p-2"><RefreshCw size={18}/></button>
             </div>
@@ -217,9 +226,12 @@ export default function ShortsAdminPage() {
                 {shorts.map((short) => (
                   <div key={short.id} className="relative group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 aspect-[3/4]">
                     <img src={short.imageUrl} alt={short.title} className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded-md">
-                      {formatTime(short.createdAt)}
+                    
+                    {/* 🌐 ઈમેજ પર ભાષાનો બેજ દેખાશે */}
+                    <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                      {short.language || 'all'}
                     </div>
+
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
                       <button onClick={() => handleDelete(short.id)} className="self-end bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg">
                         <Trash2 size={16} />
