@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
+import TrendingReels from '../components/web/TrendingReels'; // 👈 તારું ઇમ્પોર્ટ અહીં છે
 
 export default function HomePage() {
   const params = useParams();
@@ -22,13 +23,11 @@ export default function HomePage() {
         const snap = await getDocs(q);
         const allNews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // લેટેસ્ટ ટાઈમ પ્રમાણે ગોઠવો
         allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
 
-        // Placement પ્રમાણે અલગ પાડો 🚀
         setFeaturedNews(allNews.filter(n => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter(n => n.placement?.isTrending).slice(0, 5)); // ટ્રેન્ડિંગમાં ખાલી ટોપ 5
-        setHomeNews(allNews.filter(n => n.placement?.showOnHome)); // નીચે બતાવવા માટે
+        setTrendingNews(allNews.filter(n => n.placement?.isTrending).slice(0, 5));
+        setHomeNews(allNews.filter(n => n.placement?.showOnHome));
       } catch (error) {
         console.error("Error loading news:", error);
       } finally {
@@ -46,7 +45,7 @@ export default function HomePage() {
       {/* 🔝 TOP SECTION: Slider & Trending */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         
-        {/* 🖼️ Left: Main Featured Slider (isFeatured: true) */}
+        {/* 🖼️ Left: Main Featured Slider */}
         <div className="lg:col-span-2 relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer">
           {featuredNews.length > 0 ? (
             <Link href={`/${lang}/post/${featuredNews[0].id}`}>
@@ -71,7 +70,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 🔥 Right: Trending Now Sidebar (isTrending: true) */}
+        {/* 🔥 Right: Trending Now Sidebar */}
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col h-[450px]">
           <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
             <span className="text-red-500">🔥</span> Trending Now
@@ -97,8 +96,8 @@ export default function HomePage() {
 
       </div>
 
-      {/* 📰 BOTTOM SECTION: Latest Stories (showOnHome: true) */}
-      <div>
+      {/* 📰 BOTTOM SECTION: Latest Stories */}
+      <div className="mb-16"> {/* અહી નીચે જગ્યા છોડવા mb-16 ઉમેર્યું */}
         <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
           <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">Latest Stories</h2>
         </div>
@@ -122,6 +121,11 @@ export default function HomePage() {
             <p className="text-center text-slate-400 font-bold col-span-full py-10">એડમિનમાંથી 'Show on Main Home Page' ટીક કરો.</p>
           )}
         </div>
+      </div>
+
+      {/* 🎬 TRENDING REELS SECTION: આ આપણે નવું ઉમેર્યું છે 🚀 */}
+      <div className="border-t border-slate-200 pt-10">
+         <TrendingReels />
       </div>
 
     </div>
