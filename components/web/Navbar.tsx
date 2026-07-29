@@ -5,6 +5,7 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, query } from 'firebase/firestore'; // 🚀 અહીથી orderBy કાઢી નાખ્યું
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import WeatherWidget from './WeatherWidget';
 
 export default function Navbar({ lang }: { lang: string }) {
   const [categories, setCategories] = useState<any[]>([]);
