@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { Zap, Instagram } from 'lucide-react'; // 👈 Instagram આઈકોન
+import { Zap, ExternalLink } from 'lucide-react'; // 👈 Instagram કાઢીને ExternalLink મૂકી દીધું છે
 
 export default function ShortsNews() {
   const [shorts, setShorts] = useState<any[]>([]);
@@ -40,13 +40,13 @@ export default function ShortsNews() {
         </h2>
       </div>
 
-      {/* આડી લાઈનમાં 10 Shorts (Inshorts Style) */}
+      {/* આડી લાઈનમાં 10 Shorts */}
       <div className="flex overflow-x-auto gap-4 px-4 md:px-8 pb-6 snap-x custom-scrollbar">
         {shorts.map((short) => (
           <div key={short.id} className="min-w-[220px] md:min-w-[260px] aspect-[3/4] relative rounded-2xl overflow-hidden snap-center shrink-0 border border-slate-200 shadow-sm group cursor-pointer hover:shadow-xl transition-shadow">
             <img src={short.imageUrl} alt={short.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             
-            {/* નીચે કાળો પડછાયો જેથી ટેક્સ્ટ વંચાય */}
+            {/* નીચે કાળો પડછાયો */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
             
             <div className="absolute bottom-0 left-0 w-full p-4">
@@ -56,7 +56,7 @@ export default function ShortsNews() {
         ))}
       </div>
 
-      {/* 🚀 See More Shorts Button (Goes to Instagram) */}
+      {/* 🚀 See More Shorts Button */}
       <div className="flex justify-center mt-4 px-4">
         <a 
           href="https://www.instagram.com/mihirsync?igsh=MW9jcnlpcWllcGNhZQ==" 
@@ -65,7 +65,7 @@ export default function ShortsNews() {
           className="bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold py-3.5 px-8 rounded-full hover:shadow-lg hover:shadow-orange-500/40 transition-all flex items-center gap-2 group"
         >
           See More Shorts News 
-          <Instagram size={20} className="group-hover:scale-110 transition-transform" />
+          <ExternalLink size={20} className="group-hover:scale-110 transition-transform" />
         </a>
       </div>
 
