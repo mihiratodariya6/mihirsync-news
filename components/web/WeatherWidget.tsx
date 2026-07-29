@@ -73,9 +73,8 @@ export default function WeatherWidget() {
   };
 
   return (
-    <div className="flex items-center gap-2 text-xs text-white font-bold bg-white/10 px-3 py-1 rounded-full border border-white/20 hover:bg-white/20 transition cursor-pointer">
+    <div className="flex items-center gap-2 text-xs text-slate-700 font-bold bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-200 transition cursor-pointer">
       <WeatherIcon />
       <span>{weather.temp}°C, {weather.city}</span>
     </div>
   );
-}

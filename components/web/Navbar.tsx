@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query } from 'firebase/firestore'; // 🚀 અહીથી orderBy કાઢી નાખ્યું
+import { collection, getDocs, query } from 'firebase/firestore'; 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import WeatherWidget from './WeatherWidget';
+import WeatherWidget from './WeatherWidget'; // 👈 અહી ઇમ્પોર્ટ કરેલું છે
 
 export default function Navbar({ lang }: { lang: string }) {
   const [categories, setCategories] = useState<any[]>([]);
@@ -14,7 +14,6 @@ export default function Navbar({ lang }: { lang: string }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // 🚀 FIX: સીધી જ બધી કેટેગરી મંગાવી લીધી (કોઈ ફિલ્ટર વગર)
         const q = query(collection(db, 'categories'));
         const snap = await getDocs(q);
         setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -63,9 +62,17 @@ export default function Navbar({ lang }: { lang: string }) {
           })}
         </nav>
 
-        {/* SEARCH ICON */}
-        <div className="flex items-center">
-          <button className="p-2 text-slate-500 hover:text-blue-600 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+        {/* WEATHER & SEARCH ICON 🚀 */}
+        <div className="flex items-center gap-3">
+          
+          {/* અહી આપણું હવામાન વાળું વિજેટ સેટ કર્યું છે */}
+          <div className="hidden sm:block">
+            <WeatherWidget />
+          </div>
+
+          <button className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
         </div>
         
       </div>
