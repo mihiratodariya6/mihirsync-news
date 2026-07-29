@@ -3,17 +3,33 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
-import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Link as LinkIcon } from 'lucide-react';
-import Link from 'next/link';
+// અહી Cloudinary ની જરૂર પડશે ઈમેજ સેવ કરવા (જેમ AI Editor માં થાય છે)
+import { Image as ImageIcon, Plus, Trash2, CheckCircle2, RefreshCw, Upload } from 'lucide-react';
 
 export default function ShortsAdminPage() {
   const [shorts, setShorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   
-  const [imageUrl, setImageUrl] = useState('');
-  const [title, setTitle] = useState(''); // ઈમેજને યાદ રાખવા માટે નાનું નામ
+  const [title, setTitle] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState('');
   const [success, setSuccess] = useState('');
+
+  // 1. ઈમેજ અપલોડ કરવાનું ફંક્શન (Cloudinary માં)
+  const uploadImage = async (imageFile: File) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    formData.append('upload_preset', 'news_uploads'); // તારું Cloudinary Preset
+    
+    // જો તારું ક્લાઉડ નામ અલગ હોય તો બદલી નાખજે (મોટેભાગે આ જ હશે)
+    const res = await fetch(`https://api.cloudinary.com/v1_1/dxu7nnstx/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    return data.secure_url;
+  };
 
   const fetchShorts = async () => {
     try {
@@ -33,29 +49,45 @@ export default function ShortsAdminPage() {
     fetchShorts();
   }, []);
 
+  // 2. ફાઈલ સિલેક્ટ થાય ત્યારે પ્રિવ્યૂ બતાવવા
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setPreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
   const handleAddShort = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl) return;
+    if (!file) {
+      alert("Please select an image first!");
+      return;
+    }
     
     setAdding(true);
     setSuccess('');
 
     try {
+      // પેલા Cloudinary માં ઈમેજ અપલોડ કરો અને લિંક મેળવો
+      const uploadedUrl = await uploadImage(file);
+
+      // પછી Firebase માં સેવ કરો
       await addDoc(collection(db, 'shorts'), {
         title: title || 'Short News',
-        imageUrl,
+        imageUrl: uploadedUrl,
         createdAt: serverTimestamp(),
       });
 
       setSuccess('Shorts Image added successfully! 📸');
       setTitle('');
-      setImageUrl('');
+      setFile(null);
+      setPreview('');
       fetchShorts();
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error("Error adding short: ", error);
-      alert('Error adding short. Please check Firebase rules.');
+      alert('Error adding short. Image upload failed.');
     } finally {
       setAdding(false);
     }
@@ -69,6 +101,16 @@ export default function ShortsAdminPage() {
     } catch (error) {
       console.error("Error deleting short: ", error);
     }
+  };
+
+  // તારીખ અને સમય ફોર્મેટ કરવા માટે
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return 'Just now';
+    const date = timestamp.toDate();
+    return new Intl.DateTimeFormat('en-IN', { 
+      day: '2-digit', month: 'short', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    }).format(date);
   };
 
   return (
@@ -110,30 +152,34 @@ export default function ShortsAdminPage() {
                 />
               </div>
 
+              {/* 📸 GALLERY UPLOAD BUTTON */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Image Link (URL)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <LinkIcon size={16} className="text-slate-400" />
-                  </div>
-                  <input 
-                    type="url" 
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition font-medium"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-slate-400 mt-2">Paste the image link here. (You can copy image address from your media library).</p>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Select Image (Gallery/PC)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="imageUpload"
+                />
+                <label htmlFor="imageUpload" className="w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-all">
+                  {preview ? (
+                    <img src={preview} alt="Preview" className="h-40 object-contain rounded-lg" />
+                  ) : (
+                    <>
+                      <Upload size={30} className="text-slate-400 mb-2" />
+                      <span className="text-sm font-bold text-slate-600">Click to Browse Gallery</span>
+                    </>
+                  )}
+                </label>
               </div>
 
               <button 
                 type="submit" 
-                disabled={adding}
+                disabled={adding || !file}
                 className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
               >
-                {adding ? <><RefreshCw size={20} className="animate-spin" /> Adding...</> : <><ImageIcon size={20} /> Add to Shorts</>}
+                {adding ? <><RefreshCw size={20} className="animate-spin" /> Uploading...</> : <><ImageIcon size={20} /> Upload to Shorts</>}
               </button>
             </form>
           </div>
@@ -165,7 +211,13 @@ export default function ShortsAdminPage() {
                 {shorts.map((short) => (
                   <div key={short.id} className="relative group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 aspect-[3/4]">
                     <img src={short.imageUrl} alt={short.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                    
+                    {/* 🕒 Time Badge */}
+                    <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded-md">
+                      {formatTime(short.createdAt)}
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
                       <button 
                         onClick={() => handleDelete(short.id)}
                         className="self-end bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg"
