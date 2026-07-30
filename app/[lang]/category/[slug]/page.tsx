@@ -3,46 +3,74 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { db } from '../../../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function CategoryPage() {
   const params = useParams();
   const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
-  const slug = params.slug as string;
+  const slug = (params.slug as string) || '';
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
   const [trendingNews, setTrendingNews] = useState<any[]>([]);
   const [latestNews, setLatestNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalDbDocs, setTotalDbDocs] = useState(0);
 
   useEffect(() => {
     const fetchCategoryNews = async () => {
       try {
-        const q = query(
-          collection(db, 'articles'),
-          where('status', '==', 'published'),
-          where('categorySlugs', 'array-contains', slug)
-        );
+        setLoading(true);
+        // 🚀 ડાયરેક્ટ બધા જ આર્ટિકલ્સ મંગાવો (કોઈ જ Firebase Condition વગર)
+        const snapshot = await getDocs(collection(db, 'articles'));
+        const rawDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
         
-        const snapshot = await getDocs(q);
-        
-        // 🚀 FIX: અહી 'as any' ઉમેર્યું છે જેથી લાલ લાઈન જતી રહે
-        const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-        
-        allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+        setTotalDbDocs(rawDocs.length);
 
-        // 🚀 FIX: અહી '(n: any)' ઉમેર્યું છે
-        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5)); 
-        setLatestNews(allNews); 
-        
+        const targetSlug = slug.toLowerCase().trim();
+
+        // 🚀 ૧. ખાલી PUBLISHED / published વાળા આર્ટિકલ્સ લો
+        const publishedNews = rawDocs.filter((news: any) => {
+          const st = (news.status || '').toLowerCase();
+          return st === 'published' || st === ''; // જો સ્ટેટસ ના હોય તો પણ ગણી લેશે
+        });
+
+        // 🚀 ૨. કેટેગરી મેચ કરો (નાના-મોટા અક્ષરો કે સ્પેલિંગ સરખા કરીને)
+        const filtered = publishedNews.filter((news: any) => {
+          if (!targetSlug) return true;
+
+          const catName = (news.category || '').toLowerCase().trim();
+          const catSlug = (news.categorySlug || '').toLowerCase().trim();
+          
+          const inArrayNames = Array.isArray(news.categories) 
+            ? news.categories.some((c: string) => c.toLowerCase().trim() === targetSlug)
+            : false;
+
+          const inArraySlugs = Array.isArray(news.categorySlugs) 
+            ? news.categorySlugs.some((s: string) => s.toLowerCase().trim() === targetSlug)
+            : false;
+
+          return catName === targetSlug || catSlug === targetSlug || inArrayNames || inArraySlugs;
+        });
+
+        // 🚀 ૩. સોર્ટ કરો (નવા ન્યૂઝ ઉપર)
+        filtered.sort((a: any, b: any) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        });
+
+        setFeaturedNews(filtered.filter((n: any) => n.placement?.isFeatured));
+        setTrendingNews(filtered.filter((n: any) => n.placement?.isTrending).slice(0, 5)); 
+        setLatestNews(filtered); 
+
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching category news:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchCategoryNews();
   }, [slug]);
 
@@ -58,9 +86,11 @@ export default function CategoryPage() {
       </div>
 
       {latestNews.length === 0 ? (
-        <div className="text-center p-20 bg-white rounded-2xl border border-slate-200">
-          <h2 className="text-xl font-bold text-slate-400">હજુ સુધી આ કેટેગરીમાં કોઈ ન્યૂઝ નથી!</h2>
-          <p className="text-sm text-slate-400 mt-2">નોંધ: જૂની ન્યૂઝને એડિટ કરીને ફરીથી કેટેગરી ટીક કરીને સેવ કરો.</p>
+        <div className="text-center p-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <h2 className="text-xl font-bold text-slate-700 mb-2">હજુ સુધી આ કેટેગરીમાં કોઈ ન્યૂઝ નથી!</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">
+            (ડેટાબેઝમાં કુલ {totalDbDocs} આર્ટિકલ છે. ચકાસો કે તમે એડમિનમાંથી ન્યૂઝ પોસ્ટ કરતી વખતે <strong>'{slug.toUpperCase()}'</strong> કેટેગરી સિલેક્ટ કરી છે કે નહીં.)
+          </p>
         </div>
       ) : (
         <div className="w-full flex flex-col">
@@ -76,10 +106,10 @@ export default function CategoryPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
                     <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4 inline-block shadow-md">
-                      {featuredNews[0].category}
+                      {featuredNews[0].category || slug}
                     </span>
                     <h1 className="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                      {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
+                      {featuredNews[0].translations?.[lang]?.title || featuredNews[0].translations?.['gu']?.title || featuredNews[0].translations?.['en']?.title}
                     </h1>
                   </div>
                 </Link>
@@ -103,10 +133,10 @@ export default function CategoryPage() {
                       <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                       <div>
                         <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {news.translations[lang]?.title || news.translations['gu']?.title}
+                          {news.translations?.[lang]?.title || news.translations?.['gu']?.title || news.translations?.['en']?.title}
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
-                          {news.createdAt ? new Date(news.createdAt.toMillis()).toLocaleDateString() : ''}
+                          {news.createdAt?.toMillis ? new Date(news.createdAt.toMillis()).toLocaleDateString() : ''}
                         </span>
                       </div>
                     </Link>
@@ -131,12 +161,12 @@ export default function CategoryPage() {
                   <img src={news.featuredImage || 'https://via.placeholder.com/400'} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category || slug}</span>
                   <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {news.translations[lang]?.title || news.translations['gu']?.title}
+                    {news.translations?.[lang]?.title || news.translations?.['gu']?.title || news.translations?.['en']?.title}
                   </h2>
                   <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
-                    {news.translations[lang]?.shortDescription || news.translations['gu']?.shortDescription}
+                    {news.translations?.[lang]?.shortDescription || news.translations?.['gu']?.shortDescription || news.translations?.['en']?.shortDescription}
                   </p>
                 </div>
               </Link>
