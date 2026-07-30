@@ -6,9 +6,8 @@ import { db } from '../../../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 import { Sparkles, Save, Eye, Image as ImageIcon, CheckSquare, ArrowLeft, LayoutTemplate, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic'; // 🚀 નવું
+import dynamic from 'next/dynamic';
 
-// 🚀 Jodit Editor ને ડાયનેમિક બોલાવ્યું
 const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 export default function EditPostPage() {
@@ -18,9 +17,9 @@ export default function EditPostPage() {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [isTranslating, setIsTranslating] = useState(false);
   const [message, setMessage] = useState('');
-  const [activeLangTab, setActiveLangTab] = useState<'en' | 'gu' | 'hi'>('en');
+  
+  const [activeLangTab, setActiveLangTab] = useState<'en' | 'gu' | 'hi'>('gu');
 
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -45,7 +44,6 @@ export default function EditPostPage() {
     hi: { title: '', shortDescription: '', content: '' }
   });
 
-  // 🚀 Pro Editor નું મસ્ત સેટિંગ (જેમાં બધા બટન્સ છે)
   const editorConfig = useMemo(() => ({
     readonly: false,
     height: 450,
@@ -130,21 +128,6 @@ export default function EditPostPage() {
     }
   };
 
-  const handleAutoTranslate = async () => {
-    if (!translations[activeLangTab].title || !translations[activeLangTab].content) return alert("પહેલા કોઈ એક ભાષામાં ન્યૂઝ લખો!");
-    setIsTranslating(true);
-    setTimeout(() => {
-      setTranslations({
-        en: { title: translations[activeLangTab].title ? "Translated English Headline" : "", shortDescription: "English short desc...", content: "English content..." },
-        gu: { title: translations[activeLangTab].title ? "અહીં ગુજરાતી હેડલાઇન" : "", shortDescription: "ગુજરાતી ટૂંકું વર્ણન...", content: "ગુજરાતી સમાચાર..." },
-        hi: { title: translations[activeLangTab].title ? "यहाँ हिंदी हेडलाइन" : "", shortDescription: "हिंदी विवरण...", content: "हिंदी खबर..." }
-      });
-      setIsTranslating(false);
-      setMessage('✨ AI Translate Successful!');
-      setTimeout(() => setMessage(''), 3000);
-    }, 2000);
-  };
-
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategories.length === 0) return alert("કૃપા કરીને ઓછામાં ઓછી એક કેટેગરી સિલેક્ટ કરો.");
@@ -158,7 +141,7 @@ export default function EditPostPage() {
       if (imageFile) {
         const formData = new FormData();
         formData.append('image', imageFile);
-        const IMGBB_API_KEY = "અહીં_તારો_IMGBB_API_KEY_પેસ્ટ_કર"; // 👈 API KEY નાખજે
+        const IMGBB_API_KEY = "અહીં_તારો_IMGBB_API_KEY_પેસ્ટ_કર"; // 👈 તારો API KEY પાછો નાખી દેજે
         const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
         const imgData = await imgRes.json();
         if (imgData.success) finalImageUrl = imgData.data.url;
@@ -175,6 +158,7 @@ export default function EditPostPage() {
         placement: placement,
         stats: stats,
         translations: translations,
+        status: 'published', // 🚀 અસલી જાદુ! આ લાઈન ડેટાબેઝમાં ગાયબ થયેલું સ્ટેટસ પાછું લાવી દેશે!
         updatedAt: serverTimestamp() 
       });
 
@@ -281,9 +265,6 @@ export default function EditPostPage() {
                     </button>
                   ))}
                 </div>
-                <button onClick={handleAutoTranslate} disabled={isTranslating} className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-3 py-1.5 rounded-md font-bold text-xs flex items-center gap-1 shadow-md hover:shadow-lg disabled:opacity-70">
-                  <Sparkles size={14} className={isTranslating ? "animate-spin" : ""} /> AI Translate
-                </button>
               </div>
               
               <div className="p-5 space-y-4">
@@ -296,17 +277,15 @@ export default function EditPostPage() {
                   <textarea rows={2} value={translations[activeLangTab].shortDescription} onChange={(e) => handleContentChange(activeLangTab, 'shortDescription', e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none resize-none bg-slate-50 focus:bg-white" />
                 </div>
                 
-                {/* 🚀 અહી આપણું PRO RICH TEXT EDITOR આવી ગયું */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 text-blue-600 flex items-center gap-1"><Sparkles size={14}/> Full Story (Pro Editor)</label>
                   <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
                     <JoditEditor
                       value={translations[activeLangTab].content}
                       config={editorConfig}
-                      onBlur={(newContent) => handleContentChange(activeLangTab, 'content', newContent)} // Editor ની બહાર ક્લિક કરશો એટલે સેવ થશે
+                      onBlur={(newContent) => handleContentChange(activeLangTab, 'content', newContent)}
                     />
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 mt-2">નોંધ: લખાણ ટાઈપ કર્યા પછી એડિટરની બહાર ખાલી જગ્યામાં ક્લિક કરશો, એટલે બાજુમાં લાઈવ પ્રીવ્યુ અપડેટ થઈ જશે.</p>
                 </div>
 
               </div>
@@ -334,7 +313,6 @@ export default function EditPostPage() {
               <h1 className="text-3xl font-black text-slate-900 leading-tight mt-4 mb-3">{translations[activeLangTab].title}</h1>
               <p className="text-slate-500 font-medium mb-6 text-lg border-l-4 border-blue-600 pl-4">{translations[activeLangTab].shortDescription}</p>
               
-              {/* 🚀 જાદુ 2: રિચ ટેક્સ્ટને સુંદર રીતે દેખાડવા માટેનું CSS (Live Preview માં) */}
               <style dangerouslySetInnerHTML={{__html: `
                 .rich-text-content h1, .rich-text-content h2, .rich-text-content h3 { font-weight: 800; margin-bottom: 0.5em; color: #0f172a; }
                 .rich-text-content ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1.5em; }
