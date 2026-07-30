@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
@@ -9,35 +8,33 @@ import TrendingReels from '../../components/web/TrendingReels';
 import ShortsNews from '../../components/web/ShortsNews';
 
 export default function HomePage() {
-  const params = useParams();
-  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
+  // 🚀 લિંકમાં ભલે /en હોય કે /hi, આપણે બધે ગુજરાતી જ લાવીશું!
+  const lang = 'gu';
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
   const [trendingNews, setTrendingNews] = useState<any[]>([]);
   const [homeNews, setHomeNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🚀 જાદુઈ ફંક્શન: જે ભાષા ખાલી હોય તો ઓટોમેટિક ગુજરાતી શોધી લેશે!
-  const getTitle = (news: any, currentLang: string) => {
-    const title = news?.translations?.[currentLang]?.title;
-    if (title && title.trim() !== '') return title; // જો લખાણ હોય તો એ બતાવો
-    return news?.translations?.['gu']?.title || news?.translations?.['en']?.title || 'Title Missing';
+  // 🚀 અસલી જાદુ: આ ફંક્શન સીધું ગુજરાતી ડેટા જ પકડશે!
+  const getTitle = (news: any) => {
+    if (news?.translations?.gu?.title) return news.translations.gu.title;
+    if (news?.translations?.en?.title) return news.translations.en.title;
+    return 'Title Missing';
   };
 
-  const getDesc = (news: any, currentLang: string) => {
-    const desc = news?.translations?.[currentLang]?.shortDescription;
-    if (desc && desc.trim() !== '') return desc;
-    return news?.translations?.['gu']?.shortDescription || news?.translations?.['en']?.shortDescription || '';
+  const getDesc = (news: any) => {
+    if (news?.translations?.gu?.shortDescription) return news.translations.gu.shortDescription;
+    if (news?.translations?.en?.shortDescription) return news.translations.en.shortDescription;
+    return '';
   };
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        // 🚀 Firebase ની કોઈ ઝંઝટ વગર સીધા બધા ન્યૂઝ મંગાવો
         const snapshot = await getDocs(collection(db, 'articles'));
         const rawDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
-        // 🚀 'published' વાળા ફિલ્ટર કરો
         const publishedNews = rawDocs.filter((news: any) => {
           const st = (news.status || '').toLowerCase();
           return st === 'published' || st === ''; 
@@ -80,10 +77,10 @@ export default function HomePage() {
                   {featuredNews[0].category || 'NEWS'}
                 </span>
                 <h1 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                  {getTitle(featuredNews[0], lang)}
+                  {getTitle(featuredNews[0])}
                 </h1>
                 <p className="text-slate-300 mt-3 text-lg line-clamp-2">
-                  {getDesc(featuredNews[0], lang)}
+                  {getDesc(featuredNews[0])}
                 </p>
               </div>
             </Link>
@@ -106,7 +103,7 @@ export default function HomePage() {
                   <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {getTitle(news, lang)}
+                      {getTitle(news)}
                     </h4>
                     <span className="text-[10px] font-bold text-blue-500 uppercase mt-2 inline-block">{news.category}</span>
                   </div>
@@ -136,10 +133,10 @@ export default function HomePage() {
                 <div className="p-5">
                   <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
                   <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {getTitle(news, lang)}
+                    {getTitle(news)}
                   </h2>
                   <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
-                    {getDesc(news, lang)}
+                    {getDesc(news)}
                   </p>
                 </div>
               </Link>
