@@ -1,172 +1,156 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { db } from '../../../lib/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Layers, Plus, Trash2, GitMerge } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import Link from 'next/link';
 
-export default function CategoryManager() {
-  const [categories, setCategories] = useState<any[]>([]);
+export default function CategoryPage() {
+  const params = useParams();
+  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
+  const slug = params.slug as string;
+
+  const [featuredNews, setFeaturedNews] = useState<any[]>([]);
+  const [trendingNews, setTrendingNews] = useState<any[]>([]);
+  const [latestNews, setLatestNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // નવી કેટેગરી માટેનું સ્ટેટ
-  const [newCat, setNewCat] = useState({
-    name: '',
-    slug: '',
-    parentId: '' // આનાથી ખબર પડશે કે આ મેઈન છે કે કોઈની અંદર (દા.ત. સુરત નો parent ગુજરાત)
-  });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const fetchCategoryNews = async () => {
+      try {
+        // 🚀 FIX: Firebase ની Index Error ના આવે એટલે ખાલી એક જ કન્ડિશન રાખી!
+        const q = query(
+          collection(db, 'articles'),
+          where('status', '==', 'published')
+        );
+        
+        const snapshot = await getDocs(q);
+        let allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+        
+        // 🚀 અસલી જાદુ અહી છે: આપણે જાતે જ (લોકલી) કેટેગરી ફિલ્ટર કરી લીધી!
+        const targetSlug = slug.toLowerCase();
+        allNews = allNews.filter((news: any) => {
+          const hasSlugInArray = news.categorySlugs && news.categorySlugs.some((s: string) => s.toLowerCase() === targetSlug);
+          const hasDirectSlug = news.categorySlug && news.categorySlug.toLowerCase() === targetSlug;
+          const hasCategoryName = news.category && news.category.toLowerCase() === targetSlug;
+          
+          return hasSlugInArray || hasDirectSlug || hasCategoryName;
+        });
+        
+        allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
 
-  // ફાયરબેઝમાંથી બધી કેટેગરી લાવવા માટે
-  const fetchCategories = async () => {
-    try {
-      const q = query(collection(db, 'categories'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCategories(cats);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
+        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5)); 
+        setLatestNews(allNews); 
+        
+      } catch (error) {
+        console.error("Error fetching category news:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategoryNews();
+  }, [slug]);
 
-  // નામ પરથી જાતે Slug (URL) બનાવવા માટે
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setNewCat({
-      ...newCat,
-      name: val,
-      slug: val.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') // "New York" -> "new-york"
-    });
-  };
+  if (loading) return <div className="p-20 text-center font-bold text-slate-500 animate-pulse text-xl">Loading {slug.toUpperCase()} News...</div>;
 
-  // કેટેગરી સેવ કરવાનું ફંક્શન
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCat.name || !newCat.slug) return;
-    
-    setIsSubmitting(true);
-    try {
-      await addDoc(collection(db, 'categories'), {
-        name: newCat.name,
-        slug: newCat.slug,
-        parentId: newCat.parentId || null,
-        createdAt: serverTimestamp()
-      });
-      setMessage('✅ કેટેગરી સફળતાપૂર્વક ઉમેરાઈ ગઈ!');
-      setNewCat({ name: '', slug: '', parentId: '' });
-      fetchCategories(); // લિસ્ટ અપડેટ કરો
-    } catch (error) {
-      setMessage('❌ એરર આવી: ' + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setMessage(''), 3000);
-    }
-  };
-
-  // કેટેગરી ડિલીટ કરવાનું ફંક્શન
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("શું તમે ખરેખર આ કેટેગરી ડિલીટ કરવા માંગો છો?")) return;
-    try {
-      await deleteDoc(doc(db, 'categories', id));
-      setCategories(categories.filter(c => c.id !== id));
-      setMessage('🗑️ કેટેગરી ડિલીટ થઈ ગઈ.');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // મેઈન કેટેગરી અને સબ-કેટેગરી ગોઠવવા માટેનું લોજીક
-  const mainCategories = categories.filter(c => !c.parentId);
-  
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50 custom-scrollbar">
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2"><Layers size={24} className="text-blue-600"/> Category & Location Manager</h1>
-        <p className="text-slate-500 text-sm mt-1">Add main categories (e.g. India) and sub-categories (e.g. Gujarat, Surat).</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 min-h-screen">
+      
+      {/* 🏷️ Category Title */}
+      <div className="border-l-4 border-blue-600 pl-4 mb-10">
+        <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">{slug.replace('-', ' ')} News</h1>
+        <p className="text-slate-500 font-medium mt-1">Explore the latest updates in this category.</p>
       </div>
 
-      {message && <div className="mb-6 p-4 rounded-lg bg-white border border-blue-200 text-blue-700 font-bold text-sm shadow-sm">{message}</div>}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* ડાબી બાજુ: ફોર્મ */}
-        <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
-          <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Plus size={18}/> Add New Category</h2>
-          <form onSubmit={handleAddCategory} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">Category Name</label>
-              <input type="text" placeholder="e.g. Gujarat or Technology" value={newCat.name} onChange={handleNameChange} className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500" required />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">Slug (URL)</label>
-              <input type="text" value={newCat.slug} onChange={(e) => setNewCat({...newCat, slug: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-slate-500" required />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">Parent Category (Optional)</label>
-              <select value={newCat.parentId} onChange={(e) => setNewCat({...newCat, parentId: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
-                <option value="">-- No Parent (Make Main Category) --</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <p className="text-[10px] text-slate-400 mt-1">If this is a city/state, select its parent (e.g. select 'Gujarat' if adding 'Surat').</p>
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-all shadow-md">
-              {isSubmitting ? 'Saving...' : 'Save Category'}
-            </button>
-          </form>
+      {latestNews.length === 0 ? (
+        <div className="text-center p-20 bg-white rounded-2xl border border-slate-200">
+          <h2 className="text-xl font-bold text-slate-400">હજુ સુધી આ કેટેગરીમાં કોઈ ન્યૂઝ નથી!</h2>
+          <p className="text-sm text-slate-400 mt-2">નોંધ: જૂની ન્યૂઝને એડિટ કરીને ફરીથી કેટેગરી ટીક કરીને સેવ કરો.</p>
         </div>
+      ) : (
+        <div className="w-full flex flex-col">
+          
+          {/* 🔝 TOP SECTION: Category Slider & Trending */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+            
+            {/* 🖼️ Left: Featured Slider */}
+            <div className="lg:col-span-2 relative h-[400px] md:h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
+              {featuredNews.length > 0 ? (
+                <Link href={`/${lang}/post/${featuredNews[0].id}`}>
+                  <img src={featuredNews[0].featuredImage || 'https://via.placeholder.com/800'} alt="Featured" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
+                    <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4 inline-block shadow-md">
+                      {featuredNews[0].category}
+                    </span>
+                    <h1 className="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
+                      {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
+                    </h1>
+                  </div>
+                </Link>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                  <span className="font-bold text-lg mb-2">No Slider News</span>
+                  <span className="text-sm">એડમિનમાંથી 'Top Slider' ટીક કરો.</span>
+                </div>
+              )}
+            </div>
 
-        {/* જમણી બાજુ: લિસ્ટ */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Existing Categories</div>
-          <div className="p-0">
-            {loading ? <p className="p-6 text-center text-slate-500 font-bold">Loading...</p> : (
-              <ul className="divide-y divide-slate-100">
-                {mainCategories.length === 0 && <p className="p-6 text-center text-slate-400">No categories found. Create one!</p>}
-                
-                {mainCategories.map(main => (
-                  <li key={main.id} className="p-0">
-                    {/* Main Category Row */}
-                    <div className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
+            {/* 🔥 Right: Trending Sidebar */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col h-[400px] md:h-[450px]">
+              <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                <span className="text-red-500">🔥</span> Trending in {slug.replace('-', ' ').toUpperCase()}
+              </h3>
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-2">
+                {trendingNews.length > 0 ? (
+                  trendingNews.map((news, index) => (
+                    <Link key={news.id} href={`/${lang}/post/${news.id}`} className="flex gap-4 group">
+                      <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                       <div>
-                        <p className="font-black text-slate-800">{main.name}</p>
-                        <p className="text-xs text-slate-400">/{main.slug}</p>
+                        <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
+                          {news.translations[lang]?.title || news.translations['gu']?.title}
+                        </h4>
+                        <span className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
+                          {news.createdAt ? new Date(news.createdAt.toMillis()).toLocaleDateString() : ''}
+                        </span>
                       </div>
-                      <button onClick={() => handleDelete(main.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
-                    </div>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-sm font-bold text-slate-400">એડમિનમાંથી 'Trending' ટીક કરો.</p>
+                )}
+              </div>
+            </div>
 
-                    {/* Sub Categories (Children) */}
-                    <ul className="bg-slate-50/50">
-                      {categories.filter(sub => sub.parentId === main.id).map(sub => (
-                        <li key={sub.id} className="pl-12 pr-4 py-3 flex justify-between items-center border-t border-slate-100 hover:bg-slate-100 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <GitMerge size={14} className="text-slate-400"/>
-                            <div>
-                              <p className="font-bold text-slate-700 text-sm">{sub.name}</p>
-                              <p className="text-[10px] text-slate-400">/{sub.slug}</p>
-                            </div>
-                          </div>
-                          <button onClick={() => handleDelete(sub.id)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors"><Trash2 size={14}/></button>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            )}
+          </div>
+
+          {/* 📰 BOTTOM SECTION: All Latest Stories */}
+          <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
+            <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">All Stories</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {latestNews.map((news) => (
+              <Link key={news.id} href={`/${lang}/post/${news.id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all group">
+                <div className="h-48 overflow-hidden relative bg-slate-100">
+                  <img src={news.featuredImage || 'https://via.placeholder.com/400'} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+                <div className="p-5">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
+                  <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {news.translations[lang]?.title || news.translations['gu']?.title}
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
+                    {news.translations[lang]?.shortDescription || news.translations['gu']?.shortDescription}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }
