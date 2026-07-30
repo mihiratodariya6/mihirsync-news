@@ -8,7 +8,8 @@ import Link from 'next/link';
 
 export default function CategoryPage() {
   const params = useParams();
-  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'en';
+  // 🚀 અહી ડિફોલ્ટ ભાષા 'gu' (ગુજરાતી) સેટ કરી દીધી
+  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
   const slug = params.slug as string;
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
@@ -60,7 +61,6 @@ export default function CategoryPage() {
           <p className="text-sm text-slate-400 mt-2">નોંધ: જૂની ન્યૂઝને એડિટ કરીને ફરીથી કેટેગરી ટીક કરીને સેવ કરો.</p>
         </div>
       ) : (
-        /* 🚀 FIX: અહીથી `<>` કાઢીને `div` લગાવી દીધું છે જેથી Google Translate Error ના આપે */
         <div className="w-full flex flex-col">
           
           {/* 🔝 TOP SECTION: Category Slider & Trending */}
@@ -77,7 +77,8 @@ export default function CategoryPage() {
                       {featuredNews[0].category}
                     </span>
                     <h1 className="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                      {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['en']?.title}
+                      {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                      {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
                     </h1>
                   </div>
                 </Link>
@@ -101,7 +102,8 @@ export default function CategoryPage() {
                       <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                       <div>
                         <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {news.translations[lang]?.title || news.translations['en']?.title}
+                          {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                          {news.translations[lang]?.title || news.translations['gu']?.title}
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
                           {news.createdAt ? new Date(news.createdAt.toMillis()).toLocaleDateString() : ''}
@@ -131,10 +133,12 @@ export default function CategoryPage() {
                 <div className="p-5">
                   <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
                   <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {news.translations[lang]?.title || news.translations['en']?.title}
+                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                    {news.translations[lang]?.title || news.translations['gu']?.title}
                   </h2>
                   <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
-                    {news.translations[lang]?.shortDescription || news.translations['en']?.shortDescription}
+                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                    {news.translations[lang]?.shortDescription || news.translations['gu']?.shortDescription}
                   </p>
                 </div>
               </Link>
