@@ -3,14 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 import TrendingReels from '../../components/web/TrendingReels'; 
-import ShortsNews from '../../components/web/ShortsNews'; // 👈 તારું ઇમ્પોર્ટ અહીં આવી ગયું છે
+import ShortsNews from '../../components/web/ShortsNews';
 
 export default function HomePage() {
   const params = useParams();
-  // 🚀 અહી ડિફોલ્ટ ભાષા 'gu' (ગુજરાતી) સેટ કરી દીધી
   const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
@@ -18,21 +17,41 @@ export default function HomePage() {
   const [homeNews, setHomeNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 🚀 જાદુઈ ફંક્શન: જે ભાષા ખાલી હોય તો ઓટોમેટિક ગુજરાતી શોધી લેશે!
+  const getTitle = (news: any, currentLang: string) => {
+    const title = news?.translations?.[currentLang]?.title;
+    if (title && title.trim() !== '') return title; // જો લખાણ હોય તો એ બતાવો
+    return news?.translations?.['gu']?.title || news?.translations?.['en']?.title || 'Title Missing';
+  };
+
+  const getDesc = (news: any, currentLang: string) => {
+    const desc = news?.translations?.[currentLang]?.shortDescription;
+    if (desc && desc.trim() !== '') return desc;
+    return news?.translations?.['gu']?.shortDescription || news?.translations?.['en']?.shortDescription || '';
+  };
+
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const q = query(collection(db, 'articles'), where('status', '==', 'published'));
-        const snap = await getDocs(q);
-        
-        // 🚀 અહી "as any" ઉમેર્યું જેથી TypeScript ની બધી લાલ લાઈનો ગાયબ થઈ જશે!
-        const allNews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+        // 🚀 Firebase ની કોઈ ઝંઝટ વગર સીધા બધા ન્યૂઝ મંગાવો
+        const snapshot = await getDocs(collection(db, 'articles'));
+        const rawDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
-        allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+        // 🚀 'published' વાળા ફિલ્ટર કરો
+        const publishedNews = rawDocs.filter((news: any) => {
+          const st = (news.status || '').toLowerCase();
+          return st === 'published' || st === ''; 
+        });
 
-        // અહી (n: any) કર્યું છે 
-        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5));
-        setHomeNews(allNews.filter((n: any) => n.placement?.showOnHome));
+        publishedNews.sort((a: any, b: any) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return timeB - timeA;
+        });
+
+        setFeaturedNews(publishedNews.filter((n: any) => n.placement?.isFeatured));
+        setTrendingNews(publishedNews.filter((n: any) => n.placement?.isTrending).slice(0, 5));
+        setHomeNews(publishedNews.filter((n: any) => n.placement?.showOnHome));
       } catch (error) {
         console.error("Error loading news:", error);
       } finally {
@@ -51,22 +70,20 @@ export default function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         
         {/* 🖼️ Left: Main Featured Slider */}
-        <div className="lg:col-span-2 relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer">
+        <div className="lg:col-span-2 relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
           {featuredNews.length > 0 ? (
             <Link href={`/${lang}/post/${featuredNews[0].id}`}>
-              <img src={featuredNews[0].featuredImage} alt="Featured" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <img src={featuredNews[0].featuredImage || 'https://via.placeholder.com/800'} alt="Featured" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-8 w-full">
                 <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4 inline-block">
-                  {featuredNews[0].category}
+                  {featuredNews[0].category || 'NEWS'}
                 </span>
                 <h1 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                  {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
-                  {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
+                  {getTitle(featuredNews[0], lang)}
                 </h1>
                 <p className="text-slate-300 mt-3 text-lg line-clamp-2">
-                  {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
-                  {featuredNews[0].translations[lang]?.shortDescription || featuredNews[0].translations['gu']?.shortDescription}
+                  {getDesc(featuredNews[0], lang)}
                 </p>
               </div>
             </Link>
@@ -89,8 +106,7 @@ export default function HomePage() {
                   <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
-                      {news.translations[lang]?.title || news.translations['gu']?.title}
+                      {getTitle(news, lang)}
                     </h4>
                     <span className="text-[10px] font-bold text-blue-500 uppercase mt-2 inline-block">{news.category}</span>
                   </div>
@@ -114,15 +130,17 @@ export default function HomePage() {
           {homeNews.length > 0 ? (
             homeNews.map((news) => (
               <Link key={news.id} href={`/${lang}/post/${news.id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all group">
-                <div className="h-48 overflow-hidden relative">
+                <div className="h-48 overflow-hidden relative bg-slate-100">
                   <img src={news.featuredImage || 'https://via.placeholder.com/400'} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block">{news.category}</span>
-                  <h2 className="font-bold text-lg text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
-                    {news.translations[lang]?.title || news.translations['gu']?.title}
+                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
+                  <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {getTitle(news, lang)}
                   </h2>
+                  <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
+                    {getDesc(news, lang)}
+                  </p>
                 </div>
               </Link>
             ))
