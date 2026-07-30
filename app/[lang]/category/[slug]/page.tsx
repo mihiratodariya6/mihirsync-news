@@ -8,7 +8,6 @@ import Link from 'next/link';
 
 export default function CategoryPage() {
   const params = useParams();
-  // 🚀 અહી ડિફોલ્ટ ભાષા 'gu' (ગુજરાતી) સેટ કરી દીધી
   const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
   const slug = params.slug as string;
 
@@ -27,12 +26,15 @@ export default function CategoryPage() {
         );
         
         const snapshot = await getDocs(q);
-        const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // 🚀 FIX: અહી 'as any' ઉમેર્યું છે જેથી લાલ લાઈન જતી રહે
+        const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
         
         allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
 
-        setFeaturedNews(allNews.filter(n => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter(n => n.placement?.isTrending).slice(0, 5)); 
+        // 🚀 FIX: અહી '(n: any)' ઉમેર્યું છે
+        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
+        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5)); 
         setLatestNews(allNews); 
         
       } catch (error) {
@@ -77,7 +79,6 @@ export default function CategoryPage() {
                       {featuredNews[0].category}
                     </span>
                     <h1 className="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                      {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
                       {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
                     </h1>
                   </div>
@@ -102,7 +103,6 @@ export default function CategoryPage() {
                       <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                       <div>
                         <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
                           {news.translations[lang]?.title || news.translations['gu']?.title}
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
@@ -133,11 +133,9 @@ export default function CategoryPage() {
                 <div className="p-5">
                   <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
                   <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
                     {news.translations[lang]?.title || news.translations['gu']?.title}
                   </h2>
                   <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
-                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
                     {news.translations[lang]?.shortDescription || news.translations['gu']?.shortDescription}
                   </p>
                 </div>
