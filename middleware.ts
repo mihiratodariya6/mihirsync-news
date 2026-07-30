@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const locales = ['en', 'gu', 'hi'];
-const defaultLocale = 'en';
+const defaultLocale = 'gu';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

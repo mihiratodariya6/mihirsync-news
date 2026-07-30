@@ -10,7 +10,8 @@ import ShortsNews from '../../components/web/ShortsNews'; // 👈 તારુ�
 
 export default function HomePage() {
   const params = useParams();
-  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'en';
+  // 🚀 અહી ડિફોલ્ટ ભાષા 'gu' (ગુજરાતી) સેટ કરી દીધી
+  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
   const [trendingNews, setTrendingNews] = useState<any[]>([]);
@@ -60,10 +61,12 @@ export default function HomePage() {
                   {featuredNews[0].category}
                 </span>
                 <h1 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                  {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['en']?.title}
+                  {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                  {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
                 </h1>
                 <p className="text-slate-300 mt-3 text-lg line-clamp-2">
-                  {featuredNews[0].translations[lang]?.shortDescription || featuredNews[0].translations['en']?.shortDescription}
+                  {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                  {featuredNews[0].translations[lang]?.shortDescription || featuredNews[0].translations['gu']?.shortDescription}
                 </p>
               </div>
             </Link>
@@ -86,7 +89,8 @@ export default function HomePage() {
                   <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {news.translations[lang]?.title || news.translations['en']?.title}
+                      {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                      {news.translations[lang]?.title || news.translations['gu']?.title}
                     </h4>
                     <span className="text-[10px] font-bold text-blue-500 uppercase mt-2 inline-block">{news.category}</span>
                   </div>
@@ -116,7 +120,8 @@ export default function HomePage() {
                 <div className="p-5">
                   <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block">{news.category}</span>
                   <h2 className="font-bold text-lg text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {news.translations[lang]?.title || news.translations['en']?.title}
+                    {/* 🚀 અહી બેકઅપ તરીકે 'gu' સેટ કર્યું છે */}
+                    {news.translations[lang]?.title || news.translations['gu']?.title}
                   </h2>
                 </div>
               </Link>
@@ -132,7 +137,7 @@ export default function HomePage() {
          <TrendingReels />
       </div>
 
-      {/* 📸 SHORTS NEWS SECTION (આપણે અહીં ઉમેર્યું 🚀) */}
+      {/* 📸 SHORTS NEWS SECTION */}
       <div className="mb-10">
          <ShortsNews />
       </div>
