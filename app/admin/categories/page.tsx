@@ -1,156 +1,170 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import Link from 'next/link';
+import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { FolderPlus, Trash2, Plus, Loader2, Folder } from 'lucide-react';
 
-export default function CategoryPage() {
-  const params = useParams();
-  const lang = (params.lang as 'en' | 'gu' | 'hi') || 'gu';
-  const slug = params.slug as string;
-
-  const [featuredNews, setFeaturedNews] = useState<any[]>([]);
-  const [trendingNews, setTrendingNews] = useState<any[]>([]);
-  const [latestNews, setLatestNews] = useState<any[]>([]);
+export default function CategoriesPage() {
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [newCategory, setNewCategory] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchCategoryNews = async () => {
-      try {
-        // 🚀 FIX: Firebase ની Index Error ના આવે એટલે ખાલી એક જ કન્ડિશન રાખી!
-        const q = query(
-          collection(db, 'articles'),
-          where('status', '==', 'published')
-        );
-        
-        const snapshot = await getDocs(q);
-        let allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-        
-        // 🚀 અસલી જાદુ અહી છે: આપણે જાતે જ (લોકલી) કેટેગરી ફિલ્ટર કરી લીધી!
-        const targetSlug = slug.toLowerCase();
-        allNews = allNews.filter((news: any) => {
-          const hasSlugInArray = news.categorySlugs && news.categorySlugs.some((s: string) => s.toLowerCase() === targetSlug);
-          const hasDirectSlug = news.categorySlug && news.categorySlug.toLowerCase() === targetSlug;
-          const hasCategoryName = news.category && news.category.toLowerCase() === targetSlug;
-          
-          return hasSlugInArray || hasDirectSlug || hasCategoryName;
-        });
-        
-        allNews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+    fetchCategories();
+  }, []);
 
-        setFeaturedNews(allNews.filter((n: any) => n.placement?.isFeatured));
-        setTrendingNews(allNews.filter((n: any) => n.placement?.isTrending).slice(0, 5)); 
-        setLatestNews(allNews); 
-        
-      } catch (error) {
-        console.error("Error fetching category news:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCategoryNews();
-  }, [slug]);
+  const fetchCategories = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'categories'));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (loading) return <div className="p-20 text-center font-bold text-slate-500 animate-pulse text-xl">Loading {slug.toUpperCase()} News...</div>;
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setNewCategory(val);
+    setNewSlug(val.toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/[^\w-]+/g, ''));
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategory || !newSlug) return;
+    
+    setIsAdding(true);
+    setMessage('');
+    
+    try {
+      await addDoc(collection(db, 'categories'), {
+        name: newCategory,
+        slug: newSlug,
+        createdAt: serverTimestamp()
+      });
+      setMessage('✅ કેટેગરી સફળતાપૂર્વક ઉમેરાઈ ગઈ!');
+      setNewCategory('');
+      setNewSlug('');
+      fetchCategories(); 
+      
+      setTimeout(() => setMessage(''), 3000); 
+    } catch (error: any) {
+      setMessage('❌ એરર: ' + error.message);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`શું તમે ખરેખર '${name}' કેટેગરી ડિલીટ કરવા માંગો છો?`)) return;
+    
+    try {
+      await deleteDoc(doc(db, 'categories', id));
+      fetchCategories(); 
+    } catch (error) {
+      alert('Error deleting category');
+    }
+  };
+
+  if (loading) return <div className="h-full flex items-center justify-center font-bold text-slate-500 gap-2"><Loader2 className="animate-spin"/> Loading Categories...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 min-h-screen">
-      
-      {/* 🏷️ Category Title */}
-      <div className="border-l-4 border-blue-600 pl-4 mb-10">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">{slug.replace('-', ' ')} News</h1>
-        <p className="text-slate-500 font-medium mt-1">Explore the latest updates in this category.</p>
+    <div className="p-6 max-w-5xl mx-auto">
+      <div className="flex items-center gap-3 mb-8 border-b border-slate-200 pb-4">
+        <Folder className="text-blue-600" size={28} />
+        <h1 className="text-2xl font-black text-slate-800">Manage Categories</h1>
       </div>
 
-      {latestNews.length === 0 ? (
-        <div className="text-center p-20 bg-white rounded-2xl border border-slate-200">
-          <h2 className="text-xl font-bold text-slate-400">હજુ સુધી આ કેટેગરીમાં કોઈ ન્યૂઝ નથી!</h2>
-          <p className="text-sm text-slate-400 mt-2">નોંધ: જૂની ન્યૂઝને એડિટ કરીને ફરીથી કેટેગરી ટીક કરીને સેવ કરો.</p>
-        </div>
-      ) : (
-        <div className="w-full flex flex-col">
-          
-          {/* 🔝 TOP SECTION: Category Slider & Trending */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <div className="md:col-span-1">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
+            <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><FolderPlus size={18}/> Add New Category</h2>
             
-            {/* 🖼️ Left: Featured Slider */}
-            <div className="lg:col-span-2 relative h-[400px] md:h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
-              {featuredNews.length > 0 ? (
-                <Link href={`/${lang}/post/${featuredNews[0].id}`}>
-                  <img src={featuredNews[0].featuredImage || 'https://via.placeholder.com/800'} alt="Featured" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
-                    <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4 inline-block shadow-md">
-                      {featuredNews[0].category}
-                    </span>
-                    <h1 className="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg">
-                      {featuredNews[0].translations[lang]?.title || featuredNews[0].translations['gu']?.title}
-                    </h1>
-                  </div>
-                </Link>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-                  <span className="font-bold text-lg mb-2">No Slider News</span>
-                  <span className="text-sm">એડમિનમાંથી 'Top Slider' ટીક કરો.</span>
-                </div>
-              )}
-            </div>
-
-            {/* 🔥 Right: Trending Sidebar */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col h-[400px] md:h-[450px]">
-              <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                <span className="text-red-500">🔥</span> Trending in {slug.replace('-', ' ').toUpperCase()}
-              </h3>
-              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-2">
-                {trendingNews.length > 0 ? (
-                  trendingNews.map((news, index) => (
-                    <Link key={news.id} href={`/${lang}/post/${news.id}`} className="flex gap-4 group">
-                      <span className="text-4xl font-black text-slate-200 group-hover:text-blue-100 transition-colors">{index + 1}</span>
-                      <div>
-                        <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {news.translations[lang]?.title || news.translations['gu']?.title}
-                        </h4>
-                        <span className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
-                          {news.createdAt ? new Date(news.createdAt.toMillis()).toLocaleDateString() : ''}
-                        </span>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-sm font-bold text-slate-400">એડમિનમાંથી 'Trending' ટીક કરો.</p>
-                )}
+            <form onSubmit={handleAddCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category Name</label>
+                <input 
+                  type="text" 
+                  value={newCategory} 
+                  onChange={handleNameChange}
+                  placeholder="e.g. Technology" 
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-blue-400 font-medium"
+                  required
+                />
               </div>
-            </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Slug (URL)</label>
+                <input 
+                  type="text" 
+                  value={newSlug} 
+                  onChange={(e) => setNewSlug(e.target.value)}
+                  placeholder="e.g. technology" 
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-mono text-sm text-slate-500"
+                  required
+                />
+              </div>
 
-          </div>
+              {message && <div className={`text-sm font-bold p-3 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message}</div>}
 
-          {/* 📰 BOTTOM SECTION: All Latest Stories */}
-          <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
-            <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">All Stories</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {latestNews.map((news) => (
-              <Link key={news.id} href={`/${lang}/post/${news.id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all group">
-                <div className="h-48 overflow-hidden relative bg-slate-100">
-                  <img src={news.featuredImage || 'https://via.placeholder.com/400'} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                </div>
-                <div className="p-5">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category}</span>
-                  <h2 className="font-bold text-lg text-slate-900 leading-[1.4] group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {news.translations[lang]?.title || news.translations['gu']?.title}
-                  </h2>
-                  <p className="text-slate-500 text-sm mt-3 line-clamp-2 leading-relaxed">
-                    {news.translations[lang]?.shortDescription || news.translations['gu']?.shortDescription}
-                  </p>
-                </div>
-              </Link>
-            ))}
+              <button 
+                type="submit" 
+                disabled={isAdding || !newCategory}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isAdding ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                {isAdding ? 'Saving...' : 'Add Category'}
+              </button>
+            </form>
           </div>
         </div>
-      )}
+
+        <div className="md:col-span-2">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Category Name</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Slug</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400 font-bold">No categories found. Add one!</td>
+                  </tr>
+                ) : (
+                  categories.map((cat) => (
+                    <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-800">{cat.name}</td>
+                      <td className="px-6 py-4 font-mono text-sm text-slate-500">{cat.slug}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleDelete(cat.id, cat.name)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Category"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
