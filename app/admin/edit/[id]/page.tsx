@@ -19,8 +19,6 @@ export default function EditPostPage() {
   const [fetching, setFetching] = useState(true);
   const [message, setMessage] = useState('');
   
-  const [activeLangTab, setActiveLangTab] = useState<'en' | 'gu' | 'hi'>('gu');
-
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -38,16 +36,13 @@ export default function EditPostPage() {
   const [placement, setPlacement] = useState({ showOnHome: true, isFeatured: false, isTrending: false });
   const [stats, setStats] = useState({ views: 0, likes: 0, shares: 0 });
 
-  const [translations, setTranslations] = useState({
-    en: { title: '', shortDescription: '', content: '' },
-    gu: { title: '', shortDescription: '', content: '' },
-    hi: { title: '', shortDescription: '', content: '' }
-  });
+  // 🚀 અસલી જાદુ 1: બધા ટેબ કાઢીને સીધું એક જ 'guData' બનાવી દીધું!
+  const [guData, setGuData] = useState({ title: '', shortDescription: '', content: '' });
 
   const editorConfig = useMemo(() => ({
     readonly: false,
     height: 450,
-    placeholder: 'અહીં તમારી ન્યૂઝ લખો (Bold, Italic, Color, Table વગેરે વાપરીને)...',
+    placeholder: 'અહીં તમારી ન્યૂઝ ગુજરાતીમાં લખો (Bold, Italic, Color, Table વગેરે વાપરીને)...',
     style: { background: '#f8fafc', borderRadius: '0.5rem' },
     buttons: [
       'bold', 'italic', 'underline', 'strikethrough', '|',
@@ -89,12 +84,13 @@ export default function EditPostPage() {
             setSelectedCategorySlugs([data.categorySlug]);
           }
 
+          // 🚀 અસલી જાદુ 2: જૂના ડેટામાંથી સીધું ગુજરાતી જ ઉપાડી લેશે!
           if (data.translations) {
-            setTranslations({
-              en: data.translations.en || { title: '', shortDescription: '', content: '' },
-              gu: data.translations.gu || { title: '', shortDescription: '', content: '' },
-              hi: data.translations.hi || { title: '', shortDescription: '', content: '' },
-            });
+             setGuData({
+               title: data.translations.gu?.title || data.translations.en?.title || '',
+               shortDescription: data.translations.gu?.shortDescription || data.translations.en?.shortDescription || '',
+               content: data.translations.gu?.content || data.translations.en?.content || ''
+             });
           }
         }
       } catch (error) {
@@ -114,10 +110,6 @@ export default function EditPostPage() {
       setSelectedCategories([...selectedCategories, catName]);
       setSelectedCategorySlugs([...selectedCategorySlugs, catSlug]);
     }
-  };
-
-  const handleContentChange = (lang: 'en' | 'gu' | 'hi', field: string, value: string) => {
-    setTranslations(prev => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,8 +149,13 @@ export default function EditPostPage() {
         featuredImage: finalImageUrl,
         placement: placement,
         stats: stats,
-        translations: translations,
-        status: 'published', // 🚀 અસલી જાદુ! આ લાઈન ડેટાબેઝમાં ગાયબ થયેલું સ્ટેટસ પાછું લાવી દેશે!
+        // 🚀 અસલી જાદુ 3: અંગ્રેજી-હિન્દી ખાલી રહેશે, બધો ડેટા ગુજરાતીમાં જ સેવ થશે
+        translations: {
+          en: { title: '', shortDescription: '', content: '' },
+          hi: { title: '', shortDescription: '', content: '' },
+          gu: guData
+        },
+        status: 'published',
         updatedAt: serverTimestamp() 
       });
 
@@ -257,33 +254,28 @@ export default function EditPostPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="flex bg-slate-50 border-b border-slate-200 justify-between items-center pr-2">
-                <div className="flex">
-                  {[ { id: 'en', label: 'English' }, { id: 'gu', label: 'ગુજરાતી' }, { id: 'hi', label: 'हिन्दी' } ].map((tab) => (
-                    <button key={tab.id} onClick={() => setActiveLangTab(tab.id as 'en'|'gu'|'hi')} className={`px-6 py-3 font-bold text-sm transition-colors ${activeLangTab === tab.id ? 'bg-white text-blue-600 border-t-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
+                 <h3 className="font-bold text-slate-800">ન્યૂઝની વિગતો (Gujarati)</h3>
               </div>
               
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Headline ({activeLangTab.toUpperCase()})</label>
-                  <input type="text" value={translations[activeLangTab].title} onChange={(e) => handleContentChange(activeLangTab, 'title', e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none text-xl font-bold bg-slate-50 focus:bg-white" />
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Headline (મુખ્ય શીર્ષક)</label>
+                  <input type="text" value={guData.title} onChange={(e) => setGuData({...guData, title: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none text-xl font-bold bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Short Summary</label>
-                  <textarea rows={2} value={translations[activeLangTab].shortDescription} onChange={(e) => handleContentChange(activeLangTab, 'shortDescription', e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none resize-none bg-slate-50 focus:bg-white" />
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Short Summary (ટૂંકું વર્ણન)</label>
+                  <textarea rows={2} value={guData.shortDescription} onChange={(e) => setGuData({...guData, shortDescription: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none resize-none bg-slate-50 focus:bg-white" />
                 </div>
                 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 text-blue-600 flex items-center gap-1"><Sparkles size={14}/> Full Story (Pro Editor)</label>
                   <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
                     <JoditEditor
-                      value={translations[activeLangTab].content}
+                      value={guData.content}
                       config={editorConfig}
-                      onBlur={(newContent) => handleContentChange(activeLangTab, 'content', newContent)}
+                      // 🚀 અસલી જાદુ 4: onBlur કાઢીને onChange કરી દીધું. હવે કંઈ ગાયબ નહિ થાય!
+                      onChange={(newContent) => setGuData({...guData, content: newContent})}
                     />
                   </div>
                 </div>
@@ -310,8 +302,8 @@ export default function EditPostPage() {
               <span className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 {selectedCategories.length > 0 ? selectedCategories.join(', ') : "CATEGORY"}
               </span>
-              <h1 className="text-3xl font-black text-slate-900 leading-tight mt-4 mb-3">{translations[activeLangTab].title}</h1>
-              <p className="text-slate-500 font-medium mb-6 text-lg border-l-4 border-blue-600 pl-4">{translations[activeLangTab].shortDescription}</p>
+              <h1 className="text-3xl font-black text-slate-900 leading-tight mt-4 mb-3">{guData.title}</h1>
+              <p className="text-slate-500 font-medium mb-6 text-lg border-l-4 border-blue-600 pl-4">{guData.shortDescription}</p>
               
               <style dangerouslySetInnerHTML={{__html: `
                 .rich-text-content h1, .rich-text-content h2, .rich-text-content h3 { font-weight: 800; margin-bottom: 0.5em; color: #0f172a; }
@@ -323,7 +315,7 @@ export default function EditPostPage() {
                 .rich-text-content th, .rich-text-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
                 .rich-text-content blockquote { border-left: 4px solid #2563eb; padding-left: 1rem; font-style: italic; color: #475569; }
               `}} />
-              <div className="rich-text-content text-slate-700 text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: translations[activeLangTab].content }} />
+              <div className="rich-text-content text-slate-700 text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: guData.content }} />
             </div>
           </div>
         </div>
