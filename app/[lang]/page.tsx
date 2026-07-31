@@ -17,17 +17,17 @@ export default function HomePage() {
   const [homeNews, setHomeNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🚀 અસલી બ્રહ્માસ્ત્ર: ખાલી ગુજરાતી જ ઉપાડશે!
+  // 🚀 જાદુઈ ફંક્શન: જે મળશે એ ટાઈટલ દેખાડશે
   const getTitle = (news: any) => {
     const guTitle = news?.translations?.gu?.title;
     if (guTitle && guTitle.trim() !== '') return guTitle;
-    return news?.translations?.en?.title || 'Title Missing';
+    return news?.translations?.en?.title || news?.title || 'Title Missing';
   };
 
   const getDesc = (news: any) => {
     const guDesc = news?.translations?.gu?.shortDescription;
     if (guDesc && guDesc.trim() !== '') return guDesc;
-    return news?.translations?.en?.shortDescription || '';
+    return news?.translations?.en?.shortDescription || news?.shortDescription || '';
   };
 
   useEffect(() => {
@@ -36,9 +36,10 @@ export default function HomePage() {
         const snapshot = await getDocs(collection(db, 'articles'));
         const rawDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
+        // 🚀 બ્રહ્માસ્ત્ર ૧: જે ન્યૂઝ 'draft' (અધૂરા) ના હોય એ બધા જ ઉપાડી લેશે!
         const publishedNews = rawDocs.filter((news: any) => {
           const st = (news.status || '').toLowerCase();
-          return st === 'published' || st === ''; 
+          return st !== 'draft';
         });
 
         publishedNews.sort((a: any, b: any) => {
@@ -47,9 +48,13 @@ export default function HomePage() {
           return timeB - timeA;
         });
 
-        setFeaturedNews(publishedNews.filter((n: any) => n.placement?.isFeatured));
-        setTrendingNews(publishedNews.filter((n: any) => n.placement?.isTrending).slice(0, 5));
-        setHomeNews(publishedNews.filter((n: any) => n.placement?.showOnHome));
+        // 🚀 જો 'Top Slider' અને 'Trending' ટીક કર્યું હોય તો ત્યાં બતાવશે
+        setFeaturedNews(publishedNews.filter((n: any) => n.placement?.isFeatured === true));
+        setTrendingNews(publishedNews.filter((n: any) => n.placement?.isTrending === true).slice(0, 5));
+        
+        // 🚀 બ્રહ્માસ્ત્ર ૨: 'Show on Home' ટીક કર્યું હોય કે ના હોય, બધા જ ન્યૂઝ 'Latest Stories' માં તો દેખાડશે જ!
+        setHomeNews(publishedNews);
+
       } catch (error) {
         console.error("Error loading news:", error);
       } finally {
@@ -66,6 +71,7 @@ export default function HomePage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         
+        {/* 🖼️ Left: Main Featured Slider */}
         <div className="lg:col-span-2 relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
           {featuredNews.length > 0 ? (
             <Link href={`/${lang}/post/${featuredNews[0].id}`}>
@@ -90,6 +96,7 @@ export default function HomePage() {
           )}
         </div>
 
+        {/* 🔥 Right: Trending Now Sidebar */}
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col h-[450px]">
           <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
             <span className="text-red-500">🔥</span> Trending Now
@@ -115,6 +122,7 @@ export default function HomePage() {
 
       </div>
 
+      {/* 📰 BOTTOM SECTION: Latest Stories */}
       <div className="mb-16">
         <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
           <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">Latest Stories</h2>
@@ -139,15 +147,17 @@ export default function HomePage() {
               </Link>
             ))
           ) : (
-            <p className="text-center text-slate-400 font-bold col-span-full py-10">એડમિનમાંથી 'Show on Main Home Page' ટીક કરો.</p>
+            <p className="text-center text-slate-400 font-bold col-span-full py-10">કોઈ ન્યૂઝ મળ્યા નથી!</p>
           )}
         </div>
       </div>
 
+      {/* 🎬 TRENDING REELS SECTION */}
       <div className="border-t border-slate-200 pt-10">
          <TrendingReels />
       </div>
 
+      {/* 📸 SHORTS NEWS SECTION */}
       <div className="mb-10">
          <ShortsNews />
       </div>
