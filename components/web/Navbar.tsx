@@ -1,23 +1,48 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, Menu } from 'lucide-react';
-import WeatherWidget from './WeatherWidget'; // 🚀 આ રહ્યું આપણું જાદુઈ વેધર વિજેટ
+import WeatherWidget from './WeatherWidget';
 import { useParams, usePathname } from 'next/navigation';
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function Navbar() {
   const params = useParams();
   const pathname = usePathname();
   const lang = (params.lang as string) || 'gu';
 
-  // 🗺️ નેવિગેશન લિંક્સ
-  const navLinks = [
-    { name: 'HOME', path: `/${lang}` },
-    { name: 'WORLD', path: `/${lang}/category/world` },
-    { name: 'INDIA', path: `/${lang}/category/india` },
-    { name: 'SPORTS', path: `/${lang}/category/sports` },
-  ];
+  // 🚀 ડાયનેમિક મેનુ માટે State (HOME હંમેશા રહેશે)
+  const [navLinks, setNavLinks] = useState<{name: string, path: string}[]>([
+    { name: 'HOME', path: `/${lang}` }
+  ]);
+
+  // ડેટાબેઝમાંથી કેટેગરી લાવવા માટે
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'categories'));
+        const catData = snap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            name: data.name.toUpperCase(), // નામ કેપિટલમાં દેખાડવા
+            path: `/${lang}/category/${data.slug}`
+          };
+        });
+
+        // HOME ની પાછળ ડેટાબેઝવાળી બધી નવી કેટેગરી જોડી દો
+        setNavLinks([
+          { name: 'HOME', path: `/${lang}` },
+          ...catData
+        ]);
+      } catch (error) {
+        console.error("Error fetching categories for navbar:", error);
+      }
+    };
+    
+    fetchCategories();
+  }, [lang]);
 
   return (
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -30,17 +55,15 @@ export default function Navbar() {
             <span className="text-2xl font-black text-slate-900 tracking-tight">MihirSync.</span>
           </Link>
 
-          {/* 🔗 વચ્ચે: Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* 🔗 વચ્ચે: Desktop Menu (હવે ડાયનેમિક છે!) */}
+          <div className="hidden md:flex items-center gap-6 overflow-x-auto">
             {navLinks.map((link) => {
-              // કયું પેજ ખુલ્લું છે એ ચેક કરવા (ભૂરી લીટી માટે)
               const isActive = pathname === link.path || (link.name === 'HOME' && pathname === `/${lang}`);
-              
               return (
                 <Link 
                   key={link.name} 
                   href={link.path} 
-                  className={`text-sm font-bold tracking-wider transition-all ${isActive ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-slate-500 hover:text-blue-600'}`}
+                  className={`text-sm font-bold tracking-wider whitespace-nowrap transition-all ${isActive ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-slate-500 hover:text-blue-600'}`}
                 >
                   {link.name}
                 </Link>
@@ -51,7 +74,6 @@ export default function Navbar() {
           {/* 🔍 જમણી બાજુ: Weather અને Search */}
           <div className="flex items-center gap-4">
             
-            {/* 🌤️ અહીં વેધર દેખાશે (મોબાઈલમાં જગ્યા બચાવવા હાઈડ કર્યું છે, ડેસ્કટોપમાં દેખાશે) */}
             <div className="hidden lg:block">
               <WeatherWidget />
             </div>
@@ -60,7 +82,6 @@ export default function Navbar() {
               <Search size={18} />
             </button>
             
-            {/* 📱 મોબાઈલ મેનુ આઇકોન */}
             <button className="md:hidden text-slate-500 p-2">
               <Menu size={24} />
             </button>
