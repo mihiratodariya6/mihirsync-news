@@ -1,81 +1,73 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, getDocs, query } from 'firebase/firestore'; 
+import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import WeatherWidget from './WeatherWidget'; // 👈 અહી ઇમ્પોર્ટ કરેલું છે
+import { Search, Menu } from 'lucide-react';
+import WeatherWidget from './WeatherWidget'; // 🚀 આ રહ્યું આપણું જાદુઈ વેધર વિજેટ
+import { useParams, usePathname } from 'next/navigation';
 
-export default function Navbar({ lang }: { lang: string }) {
-  const [categories, setCategories] = useState<any[]>([]);
-  const pathname = usePathname(); 
+export default function Navbar() {
+  const params = useParams();
+  const pathname = usePathname();
+  const lang = (params.lang as string) || 'gu';
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const q = query(collection(db, 'categories'));
-        const snap = await getDocs(q);
-        setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Menu fetch error:", error);
-      }
-    };
-    fetchCategories();
-  }, []);
+  // 🗺️ નેવિગેશન લિંક્સ
+  const navLinks = [
+    { name: 'HOME', path: `/${lang}` },
+    { name: 'WORLD', path: `/${lang}/category/world` },
+    { name: 'INDIA', path: `/${lang}/category/india` },
+    { name: 'SPORTS', path: `/${lang}/category/sports` },
+  ];
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        
-        {/* LOGO */}
-        <Link href={`/${lang}`} className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-md">M</div>
-          <span className="text-2xl font-black tracking-tight text-slate-800">Mihir<span className="text-blue-600">Sync.</span></span>
-        </Link>
-
-        {/* DYNAMIC MENU */}
-        <nav className="hidden md:flex gap-8">
-          <Link 
-            href={`/${lang}`} 
-            className={`text-sm font-bold uppercase tracking-widest transition-colors ${
-              pathname === `/${lang}` ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-600'
-            }`}
-          >
-            HOME
+    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center h-20">
+          
+          {/* 🟦 ડાબી બાજુ: Logo */}
+          <Link href={`/${lang}`} className="flex items-center gap-2 group">
+            <div className="bg-blue-600 text-white p-1.5 rounded-lg font-black text-xl leading-none group-hover:scale-105 transition-transform">M</div>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">MihirSync.</span>
           </Link>
-          
-          {categories.map(cat => {
-            const catUrl = `/${lang}/category/${cat.slug || cat.name.toLowerCase()}`;
-            const isActive = pathname === catUrl; 
-            return (
-              <Link 
-                key={cat.id} 
-                href={catUrl} 
-                className={`text-sm font-bold uppercase tracking-widest transition-colors ${
-                  isActive ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-slate-600 hover:text-blue-600'
-                }`}
-              >
-                {cat.name}
-              </Link>
-            )
-          })}
-        </nav>
 
-        {/* WEATHER & SEARCH ICON 🚀 */}
-        <div className="flex items-center gap-3">
-          
-          {/* અહી આપણું હવામાન વાળું વિજેટ સેટ કર્યું છે */}
-          <div className="hidden sm:block">
-            <WeatherWidget />
+          {/* 🔗 વચ્ચે: Desktop Menu */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => {
+              // કયું પેજ ખુલ્લું છે એ ચેક કરવા (ભૂરી લીટી માટે)
+              const isActive = pathname === link.path || (link.name === 'HOME' && pathname === `/${lang}`);
+              
+              return (
+                <Link 
+                  key={link.name} 
+                  href={link.path} 
+                  className={`text-sm font-bold tracking-wider transition-all ${isActive ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-slate-500 hover:text-blue-600'}`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </div>
 
-          <button className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </button>
+          {/* 🔍 જમણી બાજુ: Weather અને Search */}
+          <div className="flex items-center gap-4">
+            
+            {/* 🌤️ અહીં વેધર દેખાશે (મોબાઈલમાં જગ્યા બચાવવા હાઈડ કર્યું છે, ડેસ્કટોપમાં દેખાશે) */}
+            <div className="hidden lg:block">
+              <WeatherWidget />
+            </div>
+
+            <button className="text-slate-500 hover:text-blue-600 transition-colors p-2 bg-slate-50 hover:bg-blue-50 rounded-full">
+              <Search size={18} />
+            </button>
+            
+            {/* 📱 મોબાઈલ મેનુ આઇકોન */}
+            <button className="md:hidden text-slate-500 p-2">
+              <Menu size={24} />
+            </button>
+          </div>
+
         </div>
-        
       </div>
-    </header>
+    </nav>
   );
 }
