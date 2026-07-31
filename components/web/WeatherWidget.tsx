@@ -78,4 +78,4 @@ export default function WeatherWidget() {
       <span>{weather.temp}°C, {weather.city}</span>
     </div>
   );
-  }
+}
