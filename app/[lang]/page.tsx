@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
@@ -8,25 +9,25 @@ import TrendingReels from '../../components/web/TrendingReels';
 import ShortsNews from '../../components/web/ShortsNews';
 
 export default function HomePage() {
-  // 🚀 લિંકમાં ભલે /en હોય કે /hi, આપણે બધે ગુજરાતી જ લાવીશું!
-  const lang = 'gu';
+  const params = useParams();
+  const lang = (params.lang as string) || 'gu';
 
   const [featuredNews, setFeaturedNews] = useState<any[]>([]);
   const [trendingNews, setTrendingNews] = useState<any[]>([]);
   const [homeNews, setHomeNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🚀 અસલી જાદુ: આ ફંક્શન સીધું ગુજરાતી ડેટા જ પકડશે!
+  // 🚀 અસલી બ્રહ્માસ્ત્ર: ખાલી ગુજરાતી જ ઉપાડશે!
   const getTitle = (news: any) => {
-    if (news?.translations?.gu?.title) return news.translations.gu.title;
-    if (news?.translations?.en?.title) return news.translations.en.title;
-    return 'Title Missing';
+    const guTitle = news?.translations?.gu?.title;
+    if (guTitle && guTitle.trim() !== '') return guTitle;
+    return news?.translations?.en?.title || 'Title Missing';
   };
 
   const getDesc = (news: any) => {
-    if (news?.translations?.gu?.shortDescription) return news.translations.gu.shortDescription;
-    if (news?.translations?.en?.shortDescription) return news.translations.en.shortDescription;
-    return '';
+    const guDesc = news?.translations?.gu?.shortDescription;
+    if (guDesc && guDesc.trim() !== '') return guDesc;
+    return news?.translations?.en?.shortDescription || '';
   };
 
   useEffect(() => {
@@ -63,10 +64,8 @@ export default function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       
-      {/* 🔝 TOP SECTION: Slider & Trending */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         
-        {/* 🖼️ Left: Main Featured Slider */}
         <div className="lg:col-span-2 relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
           {featuredNews.length > 0 ? (
             <Link href={`/${lang}/post/${featuredNews[0].id}`}>
@@ -91,7 +90,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 🔥 Right: Trending Now Sidebar */}
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col h-[450px]">
           <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
             <span className="text-red-500">🔥</span> Trending Now
@@ -117,7 +115,6 @@ export default function HomePage() {
 
       </div>
 
-      {/* 📰 BOTTOM SECTION: Latest Stories */}
       <div className="mb-16">
         <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-8">
           <h2 className="text-2xl font-black text-slate-900 border-l-4 border-blue-600 pl-4">Latest Stories</h2>
@@ -147,12 +144,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🎬 TRENDING REELS SECTION */}
       <div className="border-t border-slate-200 pt-10">
          <TrendingReels />
       </div>
 
-      {/* 📸 SHORTS NEWS SECTION */}
       <div className="mb-10">
          <ShortsNews />
       </div>
