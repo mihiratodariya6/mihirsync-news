@@ -101,6 +101,46 @@ export default function AdminDashboard() {
     }, 2000);
   };
 
+  // 🔴 1. નોટિફિકેશન મોકલવા માટેનું નવું ફંક્શન
+  const sendPushNotificationToAll = async (newsTitle: string, newsImage: string) => {
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const tokens: string[] = [];
+      
+      usersSnapshot.forEach((doc) => {
+        const data = doc.data();
+        // જો યુઝર જોડે pushToken હોય તો જ લીસ્ટમાં ઉમેરો
+        if (data.pushToken) {
+          tokens.push(data.pushToken);
+        }
+      });
+
+      if (tokens.length === 0) return;
+
+      const messagePayload = {
+        to: tokens,
+        sound: 'default', // અવાજ આવશે
+        title: 'MihirSync News 📰',
+        body: `આજની નવી ખબર: ${newsTitle}`,
+        data: { url: newsImage },
+      };
+
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messagePayload),
+      });
+
+      console.log("Notification Sent Successfully!");
+    } catch (error) {
+      console.error("Notification Error:", error);
+    }
+  };
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategories.length === 0) return alert("કૃપા કરીને ઓછામાં ઓછી એક કેટેગરી સિલેક્ટ કરો.");
@@ -121,6 +161,7 @@ export default function AdminDashboard() {
         if (imgData.success) finalImageUrl = imgData.data.url;
       }
 
+      // ડેટાબેઝમાં ન્યૂઝ સેવ કરી
       await addDoc(collection(db, 'articles'), {
         categories: selectedCategories,
         categorySlugs: selectedCategorySlugs,
@@ -136,7 +177,11 @@ export default function AdminDashboard() {
         updatedAt: serverTimestamp() 
       });
 
-      setMessage('✅ ન્યૂઝ સફળતાપૂર્વક પબ્લિશ થઈ ગઈ!');
+      // 🔴 2. ન્યૂઝ સેવ થયા પછી તરત જ નોટિફિકેશન મોકલી દો
+      const notifyTitle = translations.gu.title || translations.en.title || translations.hi.title || "બ્રેકિંગ ન્યૂઝ";
+      await sendPushNotificationToAll(notifyTitle, finalImageUrl);
+
+      setMessage('✅ ન્યૂઝ પબ્લિશ થઈ ગઈ અને નોટિફિકેશન મોકલાઈ ગયું!');
       setTimeout(() => { router.push('/admin/posts'); }, 1500);
 
     } catch (error) {
@@ -156,7 +201,7 @@ export default function AdminDashboard() {
           <Link href="/admin/posts" className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 rounded-lg transition flex items-center gap-2">
             <List size={16}/> All Posts
           </Link>
-          {message && <span className={`text-sm font-bold px-3 py-1 rounded-full ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{message}</span>}
+          {message && <span className={`text-sm font-bold px-3 py-1 rounded-full ${message.includes('✅') ? 'bg-green-100 text-green-700' : message.includes('❌') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{message}</span>}
           <button onClick={handlePublish} disabled={loading} className="px-6 py-2.5 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center gap-2">
             <Sparkles size={18} /> {loading ? 'Publishing...' : 'Publish Now'}
           </button>
@@ -254,7 +299,6 @@ export default function AdminDashboard() {
                   <textarea rows={2} value={translations[activeLangTab].shortDescription} onChange={(e) => handleContentChange(activeLangTab, 'shortDescription', e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none resize-none bg-slate-50 focus:bg-white" placeholder="Brief summary of the news..." />
                 </div>
                 
-                {/* 🚀 અહી આપણું PRO RICH TEXT EDITOR આવી ગયું */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 text-blue-600 flex items-center gap-1"><Sparkles size={14}/> Full Story (Pro Editor)</label>
                   <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
@@ -298,7 +342,6 @@ export default function AdminDashboard() {
                 {translations[activeLangTab].shortDescription || "Short summary will appear here..."}
               </p>
               
-              {/* 🚀 જાદુ: Live Preview CSS */}
               <style dangerouslySetInnerHTML={{__html: `
                 .rich-text-content h1, .rich-text-content h2, .rich-text-content h3 { font-weight: 800; margin-bottom: 0.5em; color: #0f172a; }
                 .rich-text-content ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1.5em; }
