@@ -46,7 +46,7 @@ export default async function RootLayout({
         {/* ગૂગલ એડસેન્સ કોડ */}
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-તારો_એડસેન્સ_કોડ_અહીંયા_નાખજે"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub- ca-pub-9566636476372749"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
