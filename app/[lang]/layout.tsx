@@ -49,6 +49,7 @@ export default async function RootLayout({
             gtag('config', 'G-LZ9F932JYK');
           `}
         </Script>
+      </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
         {/* Top Bar */}
