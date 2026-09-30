@@ -36,21 +36,19 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-LZ9F932JYK"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-LZ9F932JYK');
-  </script>
-        {/* ગૂગલ એડસેન્સ કોડ */}
+        {/* Google Analytics */}
         <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub- ca-pub-9566636476372749"
-          crossOrigin="anonymous"
+          src="https://www.googletagmanager.com/gtag/js?id=G-LZ9F932JYK"
           strategy="afterInteractive"
         />
-      </head>
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-LZ9F932JYK');
+          `}
+        </Script>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
         {/* Top Bar */}
