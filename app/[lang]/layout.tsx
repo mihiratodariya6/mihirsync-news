@@ -20,6 +20,7 @@ export const metadata = {
   },
 };
 
+
 export default async function RootLayout({
   children,
   params,
@@ -35,13 +36,19 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <head>
-        {/* ગૂગલ એડસેન્સ કોડ */}
+        {/* Google Analytics */}
         <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-તારો_એડસેન્સ_કોડ_અહીંયા_નાખજે"
-          crossOrigin="anonymous"
+          src="https://www.googletagmanager.com/gtag/js?id=G-LZ9F932JYK"
           strategy="afterInteractive"
         />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-LZ9F932JYK');
+          `}
+        </Script>
       </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
