@@ -8,7 +8,7 @@ import { Mail, MapPin, Send, ArrowRight, Smartphone, Apple } from 'lucide-react'
 
 export default function Footer({ lang = 'en' }: { lang?: string }) {
   const [categories, setCategories] = useState<any[]>([]);
-<footer className="notranslate bg-slate-900 text-white py-8"></footer>
+  
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -48,15 +48,16 @@ export default function Footer({ lang = 'en' }: { lang?: string }) {
           </form>
         </div>
 
-        {/* 🚀 App Downloads (Link to Coming Soon Page) */}
+        {/* 🚀 App Downloads */}
         <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-4">
-          <Link href={`/${lang}/apps`} className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl transition-colors">
+          {/* 🟢 ડાયરેક્ટ APK ડાઉનલોડ લિંક અહી મૂકી દીધી */}
+          <a href="https://expo.dev/artifacts/eas/KLh9qQReSZwGJU7m54fayuiYAhFbDA1km37i-PhFUTg.apk" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl transition-colors">
             <Smartphone size={24} className="text-green-400" />
             <div className="text-left">
               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Download on</div>
               <div className="text-sm font-black text-white leading-tight">Android App</div>
             </div>
-          </Link>
+          </a>
           <Link href={`/${lang}/apps`} className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl transition-colors">
             <Apple size={24} className="text-white" />
             <div className="text-left">
@@ -81,7 +82,6 @@ export default function Footer({ lang = 'en' }: { lang?: string }) {
           </p>
           
           <ul className="space-y-4 text-sm font-medium text-slate-400">
-            {/* 🚀 કોન્ટેક્ટ નંબર કાઢીને ઈમેલ મૂક્યું */}
             <li className="flex items-center gap-3"><Mail size={16} className="text-blue-500"/> mihirsync1@gmail.com</li>
             <li className="flex items-center gap-3"><MapPin size={16} className="text-blue-500"/> Surat, Gujarat, India - 395006</li>
           </ul>
