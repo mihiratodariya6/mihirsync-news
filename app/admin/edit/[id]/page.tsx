@@ -120,6 +120,48 @@ export default function EditPostPage() {
     }
   };
 
+  // 🔔 નવું એડ કર્યું: નોટિફિકેશન મોકલવાનું ફંક્શન
+  const sendNotificationToAllUsers = async (newsTitle: string) => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      let tokens: string[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.pushToken && userData.pushToken !== "") {
+          tokens.push(userData.pushToken);
+        }
+      });
+
+      if (tokens.length === 0) {
+        console.log("No push tokens found.");
+        return;
+      }
+
+      const message = {
+        to: tokens,
+        sound: 'default',
+        title: 'MihirSync: બ્રેકિંગ ન્યૂઝ 🚀',
+        body: newsTitle,
+        data: { screen: 'Home' },
+      };
+
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+      });
+
+      console.log("Notification sent successfully!");
+    } catch (error) {
+      console.error("Notification Error: ", error);
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategories.length === 0) return alert("કૃપા કરીને ઓછામાં ઓછી એક કેટેગરી સિલેક્ટ કરો.");
@@ -158,6 +200,9 @@ export default function EditPostPage() {
         status: 'published',
         updatedAt: serverTimestamp() 
       });
+
+      // 🔔 ન્યૂઝ સેવ થઈ જાય એટલે તરત નોટિફિકેશન મોકલી દો
+      await sendNotificationToAllUsers(guData.title);
 
       setMessage('✅ ન્યૂઝ સફળતાપૂર્વક અપડેટ થઈ ગઈ!');
       setTimeout(() => { router.push('/admin/posts'); }, 1500);

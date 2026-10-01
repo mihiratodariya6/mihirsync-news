@@ -101,6 +101,48 @@ export default function AdminDashboard() {
     }, 2000);
   };
 
+  // 🔔 નવું એડ કર્યું: નોટિફિકેશન મોકલવાનું ફંક્શન
+  const sendNotificationToAllUsers = async (newsTitle: string) => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      let tokens: string[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.pushToken && userData.pushToken !== "") {
+          tokens.push(userData.pushToken);
+        }
+      });
+
+      if (tokens.length === 0) {
+        console.log("No push tokens found.");
+        return;
+      }
+
+      const message = {
+        to: tokens,
+        sound: 'default',
+        title: 'MihirSync: બ્રેકિંગ ન્યૂઝ 🚀',
+        body: newsTitle,
+        data: { screen: 'Home' },
+      };
+
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+      });
+
+      console.log("Notification sent successfully!");
+    } catch (error) {
+      console.error("Notification Error: ", error);
+    }
+  };
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategories.length === 0) return alert("કૃપા કરીને ઓછામાં ઓછી એક કેટેગરી સિલેક્ટ કરો.");
@@ -135,6 +177,11 @@ export default function AdminDashboard() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp() 
       });
+
+      // 🔔 ન્યૂઝ પબ્લિશ થઈ જાય એટલે તરત જ નોટિફિકેશન મોકલી દો
+      // જે ભાષામાં ટાઇટલ લખ્યું હોય એ જ ટાઇટલ નોટિફિકેશનમાં જશે
+      const notificationTitle = translations.gu.title || translations.en.title || translations.hi.title;
+      await sendNotificationToAllUsers(notificationTitle);
 
       setMessage('✅ ન્યૂઝ સફળતાપૂર્વક પબ્લિશ થઈ ગઈ!');
       setTimeout(() => { router.push('/admin/posts'); }, 1500);
