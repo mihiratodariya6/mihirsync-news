@@ -21,7 +21,7 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
   const lang = resolvedParams.lang || 'en';
 
   const teamMembers = [
-    { name: "Mihir Patel", role: "Founder & Editor-in-Chief", desc: "Leading the vision of fast and accurate digital journalism from Surat, Gujarat." },
+    { name: "Mihir Atodariya", role: "Founder & Editor-in-Chief", desc: "Leading the vision of fast and accurate digital journalism from Surat, Gujarat." },
     { name: "Aarav Sharma", role: "Senior Technology Editor", desc: "Specializing in AI, Silicon Valley updates, tech breakthroughs, and startup ecosystems." },
     { name: "Priya Mehta", role: "Global Affairs & Business Lead", desc: "Tracking international markets, trade policies, and global economic shifts." },
     { name: "Rajesh Varma", role: "Head of Fact-Checking", desc: "Ensuring zero-tolerance for fake news with rigorous multi-step verification." }
