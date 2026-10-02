@@ -49,13 +49,13 @@ export default async function RootLayout({
           `}
         </Script>
 
-        {/* 🚀 Google AdSense Verification Code */}
-        <Script
+        {/* 🚀 Google AdSense Meta Tag & Script */}
+        <meta name="google-adsense-account" content="ca-pub-9566636476372749" />
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9566636476372749"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
       </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
