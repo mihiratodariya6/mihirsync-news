@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
+import Image from 'next/image'; // 🚀 નવો ઉમેરો: Next.js Image Component
 import TrendingReels from '../../components/web/TrendingReels'; 
 import ShortsNews from '../../components/web/ShortsNews';
 
@@ -70,11 +71,19 @@ export default function HomePage() {
       {/* 🔝 TOP SECTION: Slider & Trending */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         
-        {/* 🖼️ Left: Main Featured Slider */}
+        {/* 🖼️️ Left: Main Featured Slider */}
         <div className="lg:col-span-2 relative h-[400px] md:h-[450px] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-100">
           {featuredNews.length > 0 ? (
             <Link href={`/${lang}/post/${featuredNews[0].id}`}>
-              <img src={featuredNews[0].featuredImage} alt="Featured" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              {/* 🚀 <img> ને <Image> થી બદલ્યું, fill અને priority લગાવ્યું */}
+              <Image 
+                src={featuredNews[0].featuredImage} 
+                alt={getTitle(featuredNews[0])} 
+                fill
+                priority 
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-700" 
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
                 <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4 inline-block">
@@ -89,7 +98,7 @@ export default function HomePage() {
               </div>
             </Link>
           ) : (
-            <div className="w-full h-full bg-slate-200 flex flex-col items-center justify-center rounded-3xl">
+            <div className="w-full h-full bg-slate-200 flex flex-col items-center justify-center rounded-3xl relative">
               <span className="font-bold text-slate-400">No Slider News</span>
               <span className="text-sm text-slate-400">એડમિનમાંથી 'Top Slider' ટીક કરો.</span>
             </div>
@@ -133,7 +142,14 @@ export default function HomePage() {
             homeNews.map((news) => (
               <Link key={news.id} href={`/${lang}/post/${news.id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all group">
                 <div className="h-48 overflow-hidden relative bg-slate-100">
-                  <img src={news.featuredImage} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  {/* 🚀 <img> ને <Image> થી બદલ્યું */}
+                  <Image 
+                    src={news.featuredImage} 
+                    alt={getTitle(news)} 
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
                 </div>
                 <div className="p-5">
                   <span className="text-[10px] font-bold text-blue-600 uppercase mb-2 block tracking-wider">{news.category || 'NEWS'}</span>
@@ -152,12 +168,12 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🎬 TRENDING REELS SECTION (પાછું લાવી દીધું) */}
+      {/* 🎬 TRENDING REELS SECTION */}
       <div className="border-t border-slate-200 pt-10">
          <TrendingReels />
       </div>
 
-      {/* 📸 SHORTS NEWS SECTION (પાછું લાવી દીધું) */}
+      {/* 📸 SHORTS NEWS SECTION */}
       <div className="mb-10">
          <ShortsNews />
       </div>
