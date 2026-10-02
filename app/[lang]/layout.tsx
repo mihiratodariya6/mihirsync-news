@@ -20,7 +20,6 @@ export const metadata = {
   },
 };
 
-
 export default async function RootLayout({
   children,
   params,
@@ -34,7 +33,7 @@ export default async function RootLayout({
   const currentFont = lang === 'gu' ? fontGu.className : (lang === 'hi' ? fontHi.className : fontEn.className);
 
   return (
-    <html lang={lang}>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         {/* Google Analytics */}
         <Script
@@ -49,13 +48,25 @@ export default async function RootLayout({
             gtag('config', 'G-LZ9F932JYK');
           `}
         </Script>
+
+        {/* 🚀 Google AdSense Verification Code */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9566636476372749"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body className={`${currentFont} bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen`}>
         
         {/* Top Bar */}
         <div className="bg-slate-950 text-white text-xs py-2 px-4 sm:px-6 flex justify-between items-center z-50 relative h-10">
           <div className="flex gap-4 items-center">
-            <span className="hidden sm:inline font-medium text-slate-300">📅 {new Date().toLocaleDateString('gu-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            {/* 🚀 એરર સોલ્વ કરેલો ડેટ કોડ */}
+            <span suppressHydrationWarning className="hidden sm:inline font-medium text-slate-300">
+              <span role="img" aria-label="calendar" className="mr-1">📅</span> 
+              {new Date().toLocaleDateString('gu-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Globe size={14} className="text-blue-500" />
@@ -64,9 +75,9 @@ export default async function RootLayout({
           </div>
         </div>
 
-        <Navbar lang={lang} />
+        <Navbar/>
         <main className="flex-grow">{children}</main>
-        <Footer lang={lang} />
+        <Footer/>
       </body>
     </html>
   );

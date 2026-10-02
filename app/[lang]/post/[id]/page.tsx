@@ -115,9 +115,47 @@ export default function SinglePostPage() {
     ? content 
     : content.split('\n').filter((p: string) => p.trim() !== '').map((p: string) => `<p>${p}</p>`).join('');
 
+  // 🚀 URL જનરેટ કરવા માટે (SEO માટે)
+  const postUrl = typeof window !== 'undefined' ? window.location.href : `https://mihirsync-news-9nvx.vercel.app/${lang}/post/${postId}`;
+
   return (
     <div className="bg-white min-h-screen pb-20 font-sans selection:bg-blue-200 selection:text-blue-900">
       
+      {/* 🚀 અતિ મહત્વનું: NewsArticle Schema (SEO અને Top Stories માટે) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": title,
+            "image": [
+              post.featuredImage || "https://mihirsync-news-9nvx.vercel.app/default-image.jpg"
+            ],
+            "datePublished": post.createdAt ? new Date(post.createdAt.toMillis()).toISOString() : new Date().toISOString(),
+            "dateModified": post.updatedAt ? new Date(post.updatedAt.toMillis()).toISOString() : new Date().toISOString(),
+            "author": [{
+              "@type": "Person",
+              "name": authorName,
+              "url": "https://mihirsync-news-9nvx.vercel.app/team"
+            }],
+            "publisher": {
+              "@type": "Organization",
+              "name": "MihirSync",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://mihirsync-news-9nvx.vercel.app/logo.png" 
+              }
+            },
+            "description": shortDesc || "Latest news update from MihirSync.",
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": postUrl
+            }
+          })
+        }}
+      />
+
       <ScrollProgressBar />
       
       {/* 🚀 HEADER SECTION */}
