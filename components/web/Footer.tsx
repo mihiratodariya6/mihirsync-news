@@ -51,7 +51,7 @@ export default function Footer({ lang = 'en' }: { lang?: string }) {
         {/* 🚀 App Downloads */}
         <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-4">
           {/* 🟢 ડાયરેક્ટ APK ડાઉનલોડ લિંક અહી મૂકી દીધી */}
-          <a href="https://expo.dev/artifacts/eas/Sa3GbQ8YlhD0bUzU-MlwziT3UgskmO-wb2CCaKtEBQ4.apk" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl transition-colors">
+          <a href="https://expo.dev/artifacts/eas/wUUuytQXVjNPHzSXULpFeuKkQMcT3ICa7f8ezlixAQc.apk" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl transition-colors">
             <Smartphone size={24} className="text-green-400" />
             <div className="text-left">
               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Download on</div>
